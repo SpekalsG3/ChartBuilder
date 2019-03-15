@@ -18,7 +18,8 @@ var dataAnchores = document.getElementById("data").children,
 
 var min,
 	data, xhr,
-	max, step,
+	max,
+	step, step_mini,
 	width;
 
 if (window.innerWidth > 600) {
@@ -43,76 +44,54 @@ xhr.open("GET", "chart_data.json");
 xhr.responseType = "json";
 xhr.send();
 
+function InitCanvasProperties(cnvs, ctxt, leftGap, color, lineWidth) {
+	cnvs.style.left = leftGap;
+	cnvs.width = width;
+	cnvs.style.width = width + "px";
+	ctxt.strokeStyle = color;
+	ctxt.lineWidth = lineWidth;
+	ctxt.beginPath();
+	ctxt.moveTo(0, cnvs.height -(data[0].columns[1][0] * cnvs.height)/(max*1.1));
+}
+
+function DrawBigChart(cnvs, ctxt, clmn, iter) {
+	ctxt.lineTo(step * (iter), cnvs.height - 10 -
+				(data[0].columns[clmn][iter] * cnvs.height) / (max*1.1));
+}
+function DrawMiniChart(cnvs, ctxt, clmn, iter) {
+	ctxt.lineTo(step_mini * (iter), cnvs.height - 5 -
+					(data[0].columns[clmn][iter] * cnvs.height) / (max*1.1));
+}
 
 setTimeout(function(){
-	data[0].columns[0].shift();
-	data[0].columns[1].shift();
-	data[0].columns[2].shift();
-
 	console.log(data);
+
+	for (var i = 0; i < data[0].columns.length; i++) {
+		data[0].columns[i].shift();
+	}
 
 	max = Math.max( Math.max.apply(null, data[0].columns[1]),
 					Math.max.apply(null, data[0].columns[2]));
 
 	for (var i = 0; i < dataAnchores.length; i++) {
-		//dataAnchores[i].innerHTML = Math.floor(Math.floor(max / 10) / (i + 1)) * 10;
-
-		dataAnchores[i].innerHTML = Math.floor((max / 4) * (i));
+		dataAnchores[i].innerHTML = Math.floor((max / (dataAnchores.length-1)) * (i));
 	}
 
 	step = joined.width;
-
 	width = (data[0].columns[1].length-1) * step;
-
-	joined.style.left = -width + min + "px";
-
-	left.style.left = -width + min + "px";
-
 	step_mini = (step * min) / width;
-
 
 	pointer.style.display = "block";
 	pointer.style.width = (min * min) / width + "px";
 	pointer.style.left = min - parseInt(pointer.style.width); + "px";
 
 
-	joined.width = width;
-	joined_mini.width = min;
+	InitCanvasProperties(joined, j_ctx, -width + min + "px", data[0].colors.y0, 4);
+	InitCanvasProperties(joined_mini, j_ctx_mini, 0, data[0].colors.y0, 2);
 
-	joined.style.width = width + "px";
-	joined_mini.style.width = min + "px";
+	InitCanvasProperties(left, l_ctx, -width + min + "px", data[0].colors.y1, 4);
+	InitCanvasProperties(left_mini, l_ctx_mini, 0, data[0].colors.y1, 2);
 
-
-	left.width = width;
-	left_mini.width = min;
-
-	left.style.width = width + "px";
-	left_mini.style.width = min + "px";
-
-
-	j_ctx.strokeStyle = data[0].colors.y0;
-	j_ctx.lineWidth = 4;
-	j_ctx.beginPath();
-
-	j_ctx_mini.strokeStyle = data[0].colors.y0;
-	j_ctx_mini.lineWidth = 2;
-	j_ctx_mini.beginPath();
-
-
-	l_ctx.strokeStyle = data[0].colors.y1;
-	l_ctx.lineWidth = 4;
-	l_ctx.beginPath();
-
-	l_ctx_mini.strokeStyle = data[0].colors.y1;
-	l_ctx_mini.lineWidth = 2;
-	l_ctx_mini.beginPath();
-
-
-	j_ctx.moveTo(0, joined.height -(data[0].columns[1][0]*joined.height)/(max*1.1));
-	j_ctx_mini.moveTo(0, joined_mini.height -(data[0].columns[1][0]*joined_mini.height)/(max*1.1));
-
-	l_ctx.moveTo(0, left.height -(data[0].columns[2][0]*left.height)/(max*1.1));
-	l_ctx_mini.moveTo(0, left_mini.height -(data[0].columns[2][0]*left_mini.height)/(max*1.1));
 
 	for (var i = 1; i < data[0].columns[0].length+1; i++) {
 
@@ -121,18 +100,11 @@ setTimeout(function(){
 		timeStamp.innerHTML = time.toDateString().substr(4,6);
 		timeAnchores.appendChild(timeStamp);
 
-		j_ctx.lineTo(step * (i), joined.height - 10 -
-					(data[0].columns[1][i]*joined.height)/(max*1.1));
+		DrawBigChart(joined, j_ctx, 1, i);
+		DrawMiniChart(joined_mini, j_ctx_mini, 1, i);
 
-		j_ctx_mini.lineTo(step_mini * (i), joined_mini.height - 5 -
-						(data[0].columns[1][i]*joined_mini.height)/(max*1.1));
-
-
-		l_ctx.lineTo(step * (i), left.height - 10 -
-					(data[0].columns[2][i]*left.height)/(max*1.1));
-
-		l_ctx_mini.lineTo(step_mini * (i), left_mini.height - 5 -
-						(data[0].columns[2][i]*left_mini.height)/(max*1.1));
+		DrawBigChart(left, l_ctx, 2, i);
+		DrawMiniChart(left_mini, l_ctx_mini, 2, i);
 
 	}
 
@@ -175,37 +147,40 @@ function MoveGraph() {
 	left.style.left = -(parseInt(pointer.style.left) * width) / min + "px";
 }
 
+function MoveToBorder(event, side) {
+	if (moveHit) {
+
+		if (event.clientX * side > moveLastX * side) {
+			pointer.style.left = leftStart - x_start + event.clientX + "px";
+			moveHit = false;
+		}
+
+	} else {
+		pointer.style.left = leftStart - x_start + event.clientX + "px";
+	}
+}
+
+function StopAtBorder(event, val) {
+	if (!moveHit) {
+		moveHit = true;
+		moveLastX = event.clientX;
+	} else {
+		pointer.style.left = val;
+	}
+}
+
 scrollArea.onmousemove = function(event) {
-	
+
 	event.preventDefault();
-	
+
 	if (scroll) {
 
 		if (lastX < event.clientX) {
 
-			if (parseInt(pointer.style.left) + parseInt(pointer.style.width) < min) {
-
-				if (moveHit) {
-
-					if (event.clientX > moveLastX) {
-						pointer.style.left = leftStart + event.clientX - x_start + "px";
-						moveHit = false;
-					}
-
-				} else {
-					pointer.style.left = leftStart + event.clientX - x_start + "px";
-				}
-
-
+			if (parseInt(pointer.style.left) < min - parseInt(pointer.style.width)) {
+				MoveToBorder(event, 1);
 			} else {
-
-				if (!moveHit) {
-					moveHit = true;
-					moveLastX = event.clientX;
-				} else {
-					pointer.style.left = min - parseInt(pointer.style.width) + "px";
-				}
-
+				StopAtBorder(event, min - parseInt(pointer.style.width) + "px");
 			}
 
 			MoveGraph();
@@ -213,28 +188,9 @@ scrollArea.onmousemove = function(event) {
 		} else if (lastX > event.clientX) {
 
 			if (parseInt(pointer.style.left) > 0) {
-
-				if (moveHit) {
-
-					if (event.clientX < moveLastX) {
-						pointer.style.left = leftStart - x_start + event.clientX + "px";
-						moveHit = false;
-					}
-
-				} else {
-						pointer.style.left = leftStart - x_start + event.clientX + "px";
-				}
-
-
+				MoveToBorder(event, -1);
 			} else {
-
-				if (!moveHit) {
-					moveHit = true;
-					moveLastX = event.clientX;
-				} else {
-					pointer.style.left = 0;
-				}
-
+				StopAtBorder(event, 0);
 			}
 
 			MoveGraph();
@@ -272,7 +228,7 @@ function ChangeGraphRatio() {
 }
 
 scrollArea.addEventListener("mousemove", function(event) {
-	
+
 	event.preventDefault();
 
 	if (leftGrabber) {
@@ -354,12 +310,26 @@ scrollArea.addEventListener("mousemove", function(event) {
 
 			if (parseInt(pointer.style.width) < min - parseInt(pointer.style.left)) {
 
-				pointer.style.width = widthStart - x_start + event.clientX + "px";
+				if (sizeHit) {
+
+					if (event.clientX > sizeLastX) {
+						pointer.style.width = widthStart - x_start + event.clientX + "px";
+					}
+
+				} else {
+					pointer.style.width = widthStart - x_start + event.clientX + "px";
+				}
+
 				ChangeGraphRatio();
 
 			} else {
 
-				pointer.style.width = min - parseInt(pointer.style.left) + "px";
+				if (!sizeHit) {
+					sizeHit = true;
+					sizeLastX = event.clientX;
+				} else {
+					pointer.style.width = min - parseInt(pointer.style.left) + "px";
+				}
 
 			}
 
@@ -367,12 +337,25 @@ scrollArea.addEventListener("mousemove", function(event) {
 
 			if (parseInt(pointer.style.width) > 10 * step_mini) {
 
-				pointer.style.width = widthStart - x_start + event.clientX + "px";
+				if (sizeHit) {
+
+					if (event.clientX > sizeLastX) {
+						pointer.style.width = widthStart - x_start + event.clientX + "px";
+					}
+				} else {
+					pointer.style.width = widthStart - x_start + event.clientX + "px";
+				}
+
 				ChangeGraphRatio();
 
 			} else {
 
-				pointer.style.width = 10 * step_mini + "px";
+				if (!sizeHit) {
+					sizeHit = true;
+					sizeLastX = event.clientX;
+				} else {
+					pointer.style.width = 10 * step_mini + "px";
+				}
 
 			}
 		}
