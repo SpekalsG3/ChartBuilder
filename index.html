@@ -1,0 +1,147 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>JS</title>
+	<style type="text/css">
+	.flex {
+		display: flex;
+		align-items: center;
+	}
+	body {
+		height: 100vh;
+		margin: 0;
+		/*overflow: hidden;*/
+		justify-content: center;
+	}
+	div#box {
+		width: 100%;
+		max-width: 600px;
+		height: 100%;
+		max-height: 800px;
+		background: #eee;
+	}
+
+	div.axes {
+		position: absolute;
+		width: 100%;
+		max-width: 600px;
+		height: 400px;
+	}
+	div#data {
+		width: 100%;
+		height: 100%;
+		flex-direction: column-reverse;
+		justify-content: space-between;
+	}
+	div#data div {
+		width: 100%;
+		color: rgba(0,0,0,.5);
+		border-bottom: 1px solid rgba(0,0,0,.2);
+		margin: 5px 0;
+	}
+
+	div#timeStamps div {
+		width: 40px;
+		height: 20px;
+	}
+
+	div.graph {
+		width: 100%;
+		z-index: 100;
+	}
+
+	div.main {
+		height: 400px;
+	}
+
+	div.scroll {
+		position: relative;
+		top: 40px;
+		height: 80px;
+	}
+
+	div#scrollArea {
+		position: absolute;
+		width: 100%;
+		height: 80px;
+		z-index: 99;
+		visibility: hidden;
+	}
+
+	div.graph canvas {
+		position: relative;
+		transition: .2;
+	}
+	canvas#left {
+		top: -400px;
+	}
+	canvas#left_mini {
+		top: -80px;
+	}
+
+	div#point {
+		position: relative;
+		top: -160px;
+		height: 78px;
+		border-top: 1px solid rgba(0,0,0,.2);
+		border-bottom: 1px solid rgba(0,0,0,.2);
+		border-radius: 4px;
+		display: none;
+		cursor: grab;
+		transition: .2;
+	}
+	div.border {
+		position: relative;
+		display: inline-block;
+		width: 10px;
+		height: 78px;
+		border-radius: 50px;
+		background: rgba(0,0,0,.2);
+		cursor: col-resize;
+	}
+	div#left_border {
+		left: -1px;
+	}
+	div#right_border {
+		left: calc(100% - 23px);
+	}
+
+	</style>
+</head>
+<body class="flex">
+
+	<div id="box">
+
+		<div class="axes">
+			<div id="data" class="flex">
+				<div>0</div>
+				<div>0</div>
+				<div>0</div>
+				<div>0</div>
+				<div>0</div>
+			</div>
+			<div id="timeStamps" class="flex">
+			</div>
+		</div>
+
+		<div class="graph">
+			<div class="main">
+				<canvas id="joined" height="400" width="24"></canvas>
+				<canvas id="left" height="400" width="24"></canvas>
+			</div>
+			<div class="scroll">
+				<div id="scrollArea"></div>
+				<canvas id="joined_mini" height="80" width="24"></canvas>
+				<canvas id="left_mini" height="80" width="24"></canvas>
+				<div id="point">
+					<div class="border" id="left_border"></div>
+					<div class="border" id="right_border"></div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+	<script type="text/javascript" src="index.js"></script>
+</body>
+</html>
