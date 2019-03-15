@@ -82,6 +82,7 @@ setTimeout(function(){
 	joined.style.width = width + "px";
 	joined_mini.style.width = min + "px";
 
+
 	left.width = width;
 	left_mini.width = min;
 
@@ -97,8 +98,21 @@ setTimeout(function(){
 	j_ctx_mini.lineWidth = 2;
 	j_ctx_mini.beginPath();
 
+
+	l_ctx.strokeStyle = data[0].colors.y1;
+	l_ctx.lineWidth = 4;
+	l_ctx.beginPath();
+
+	l_ctx_mini.strokeStyle = data[0].colors.y1;
+	l_ctx_mini.lineWidth = 2;
+	l_ctx_mini.beginPath();
+
+
 	j_ctx.moveTo(0, joined.height -(data[0].columns[1][0]*joined.height)/(max*1.1));
 	j_ctx_mini.moveTo(0, joined_mini.height -(data[0].columns[1][0]*joined_mini.height)/(max*1.1));
+
+	l_ctx.moveTo(0, left.height -(data[0].columns[2][0]*left.height)/(max*1.1));
+	l_ctx_mini.moveTo(0, left_mini.height -(data[0].columns[2][0]*left_mini.height)/(max*1.1));
 
 	for (var i = 1; i < data[0].columns[0].length+1; i++) {
 
@@ -112,10 +126,21 @@ setTimeout(function(){
 
 		j_ctx_mini.lineTo(step_mini * (i), joined_mini.height - 5 -
 						(data[0].columns[1][i]*joined_mini.height)/(max*1.1));
+
+
+		l_ctx.lineTo(step * (i), left.height - 10 -
+					(data[0].columns[2][i]*left.height)/(max*1.1));
+
+		l_ctx_mini.lineTo(step_mini * (i), left_mini.height - 5 -
+						(data[0].columns[2][i]*left_mini.height)/(max*1.1));
+
 	}
 
 	j_ctx.stroke();
 	j_ctx_mini.stroke();
+
+	l_ctx.stroke();
+	l_ctx_mini.stroke();
 }, 500);
 
 
@@ -146,6 +171,8 @@ pointer.onmousedown = function(event) {
 
 function MoveGraph() {
 	joined.style.left = -(parseInt(pointer.style.left) * width) / min + "px";
+
+	left.style.left = -(parseInt(pointer.style.left) * width) / min + "px";
 }
 
 scrollArea.onmousemove = function(event) {
@@ -237,6 +264,9 @@ function ChangeGraphRatio() {
 	width = (min * min) / parseInt(pointer.style.width);
 	joined.style.width = width + "px";
 	joined.style.height = "400px";
+
+	left.style.width = width + "px";
+	left.style.height = "400px";
 
 	MoveGraph();
 }
