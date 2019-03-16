@@ -118,19 +118,27 @@ setTimeout(function(){
 
 
 var scroll = false,
-	moveHit = false,
-	sizeHit = false,
-	xmove = 0,
-	backX = 0,
-	moveLastX,
-	sizeLastX,
-	start,
-	lastX,
-	leftStart;
+	moveFree = false,
+	sizeFree = false,
+	leftStart,
+	x_start;
 
 var widthStart,
 	leftGrabber = false,
 	rightGrabber = false;
+
+function CheckPointerOut() {
+	if (parseInt(pointer.style.left) > min - parseInt(pointer.style.width)) {
+		pointer.style.left = min - parseInt(pointer.style.width) + "px";
+		moveFree = false;
+	} else if (parseInt(pointer.style.left) < 0) {
+		pointer.style.left = 0;
+		moveFree = false;
+	} else {
+		moveFree = true;
+	}
+	MoveGraph();
+}
 
 pointer.onmousedown = function(event) {
 	event.preventDefault();
@@ -150,55 +158,18 @@ function MoveGraph() {
 	left.style.left = -(parseInt(pointer.style.left) * width) / min + "px";
 }
 
-function MoveToBorder(event, side) {
-	if (moveHit) {
-
-		if (event.clientX * side > moveLastX * side) {
-			pointer.style.left = leftStart - x_start + event.clientX + "px";
-			moveHit = false;
-		}
-
-	} else {
-		pointer.style.left = leftStart - x_start + event.clientX + "px";
-	}
-}
-
-function StopAtBorder(event, val) {
-	if (!moveHit) {
-		moveHit = true;
-		moveLastX = event.clientX;
-	} else {
-		pointer.style.left = val;
-	}
-}
-
 scrollArea.onmousemove = function(event) {
 
 	if (scroll) {
 
-		if (lastX < event.clientX) {
+		CheckPointerOut()
 
-			if (parseInt(pointer.style.left) < min - parseInt(pointer.style.width)) {
-				MoveToBorder(event, 1);
-			} else {
-				StopAtBorder(event, min - parseInt(pointer.style.width) + "px");
-			}
-
+		if (moveFree) {
+			pointer.style.left = leftStart - x_start + event.clientX + "px";
 			MoveGraph();
-
-		} else if (lastX > event.clientX) {
-
-			if (parseInt(pointer.style.left) > 0) {
-				MoveToBorder(event, -1);
-			} else {
-				StopAtBorder(event, 0);
-			}
-
-			MoveGraph();
-
 		}
 
-		lastX = event.clientX;
+		CheckPointerOut();
 	}
 };
 
@@ -208,7 +179,6 @@ borderLeft.onmousedown = function(event) {
 	leftGrabber = true;
 	widthStart = parseInt(pointer.style.width);
 	x_start = event.clientX;
-	lastX = event.clientX;
 	leftStart = parseInt(pointer.style.left);
 	scrollArea.style.display = "block";
 }
@@ -218,7 +188,6 @@ borderRight.onmousedown = function(event) {
 	rightGrabber = true;
 	widthStart = parseInt(pointer.style.width);
 	x_start = event.clientX;
-	lastX = event.clientX;
 	leftStart = parseInt(pointer.style.left);
 	scrollArea.style.display = "block";
 }
@@ -234,74 +203,35 @@ function ChangeGraphRatio() {
 	MoveGraph();
 }
 
+function CheckPointerSize() {
+	if (parseInt(pointer.style.width) < Math.floor(10 * step_mini)) {
+		pointer.style.width = 10 * step_mini + "px";
+		sizeFree = false;
+	} else if (0 > parseInt(pointer.style.left)) {
+		pointer.style.left = 0;
+		sizeFree = false;
+	} else if (parseInt(pointer.style.width) > min - parseInt(pointer.style.left)) {
+		pointer.style.width = min - parseInt(pointer.style.left) + "px";
+		sizeFree = false;
+	} else {
+		sizeFree = true;
+	}
+
+	ChangeGraphRatio();
+}
+
 scrollArea.addEventListener("mousemove", function(event) {
 
 	if (leftGrabber) {
 
-		if (lastX < event.clientX) {
-
-			if (parseInt(pointer.style.width) > 10 * step_mini) {
-
-				if (sizeHit) {
-
-					if (event.clientX > sizeLastX) {
-						pointer.style.width = widthStart + x_start - event.clientX + "px";
-						pointer.style.left = leftStart - x_start + event.clientX + "px";
-						sizeHit = false;
-					}
-
-				} else {
-					pointer.style.width = widthStart + x_start - event.clientX + "px";
-					pointer.style.left = leftStart - x_start + event.clientX + "px";
-				}
-
-			} else {
-
-				if (!sizeHit) {
-					console.log("hitted");
-					sizeHit = true;
-					sizeLastX = event.clientX;
-				}
-				pointer.style.width = 10 * step_mini + "px";
-
-			}
-
-			ChangeGraphRatio();
-
-		} else if (lastX > event.clientX) {
-
-			if (0 < parseInt(pointer.style.left)) {
-
-				if (sizeHit) {
-
-					if (event.clientX < sizeLastX) {
-						pointer.style.width = widthStart + x_start - event.clientX + "px";
-						pointer.style.left = leftStart - x_start + event.clientX + "px";
-						sizeHit = false;
-					}
-
-				} else {
-					pointer.style.width = widthStart + x_start - event.clientX + "px";
-					pointer.style.left = leftStart - x_start + event.clientX + "px";
-				}
-
-			} else {
-
-				if (!sizeHit) {
-					sizeHit = true;
-					sizeLastX = event.clientX;
-				} else {
-					pointer.style.width = parseInt(pointer.style.left) + parseInt(pointer.style.width) + "px";
-					pointer.style.left = 0;
-				}
-
-			}
-
-			ChangeGraphRatio();
-
-		}
+		CheckPointerSize();
 		
-		lastX = event.clientX;
+		if (sizeFree) {
+			pointer.style.width = widthStart + x_start - event.clientX + "px";
+			pointer.style.left = leftStart - x_start + event.clientX + "px";
+		}
+
+		CheckPointerSize();
 
 	}
 });
@@ -310,63 +240,13 @@ scrollArea.addEventListener("mousemove", function(event) {
 
 	if (rightGrabber) {
 
-		if (lastX < event.clientX) {
+		CheckPointerSize();
 
-			if (parseInt(pointer.style.width) < min - parseInt(pointer.style.left)) {
-
-				if (sizeHit) {
-
-					if (event.clientX > sizeLastX) {
-						pointer.style.width = widthStart - x_start + event.clientX + "px";
-						sizeHit = false;
-					}
-
-				} else {
-					pointer.style.width = widthStart - x_start + event.clientX + "px";
-				}
-
-				ChangeGraphRatio();
-
-			} else {
-
-				if (!sizeHit) {
-					sizeHit = true;
-					sizeLastX = event.clientX;
-				}
-				pointer.style.width = min - parseInt(pointer.style.left) + "px";
-
-			}
-
-		} else if (lastX > event.clientX) {
-
-			if (parseInt(pointer.style.width) > 10 * step_mini) {
-
-				if (sizeHit) {
-
-					if (event.clientX < sizeLastX) {
-						pointer.style.width = widthStart - x_start + event.clientX + "px";
-						sizeHit = false;
-					}
-
-				} else {
-					pointer.style.width = widthStart - x_start + event.clientX + "px";
-				}
-
-				ChangeGraphRatio();
-
-			} else {
-
-				if (!sizeHit) {
-					sizeHit = true;
-					sizeLastX = event.clientX;
-				} else {
-					pointer.style.width = 10 * step_mini + "px";
-				}
-
-			}
+		if (sizeFree) {
+			pointer.style.width = widthStart - x_start + event.clientX + "px";
 		}
 
-		lastX = event.clientX;
+		CheckPointerSize();
 
 	}
 });
@@ -375,8 +255,8 @@ scrollArea.onmouseout = function() {
 	scroll = false;
 	leftGrabber = false;
 	rightGrabber = false;
-	moveHit = 0;
-	sizeHit = 0;
+	moveFree = false;
+	sizeFree = false;
 	scrollArea.style.display = "none";
 }
 
@@ -384,8 +264,8 @@ scrollArea.onmouseup = function() {
 	scroll = false;
 	leftGrabber = false;
 	rightGrabber = false;
-	moveHit = 0;
-	sizeHit = 0;
+	moveFree = false;
+	sizeFree = false;
 	scrollArea.style.display = "none";
 }
 
