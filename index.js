@@ -97,6 +97,7 @@ setTimeout(function(){
 
 		var timeStamp = document.createElement("div");
 		var time = new Date(data[0].columns[0][i-1]);
+		timeStamp.className = "timeStamp";
 		timeStamp.innerHTML = time.toDateString().substr(4,6);
 		timeAnchores.appendChild(timeStamp);
 
@@ -132,12 +133,14 @@ var widthStart,
 	rightGrabber = false;
 
 pointer.onmousedown = function(event) {
+	event.preventDefault();
+
 	if (!(leftGrabber || rightGrabber)) {
 		scroll = true;
 		x_start = event.clientX;
 		leftStart = parseInt(pointer.style.left);
 		lastX = event.clientX;
-		scrollArea.style.visibility = "visible";
+		scrollArea.style.display = "block";
 	}
 }
 
@@ -171,8 +174,6 @@ function StopAtBorder(event, val) {
 
 scrollArea.onmousemove = function(event) {
 
-	event.preventDefault();
-
 	if (scroll) {
 
 		if (lastX < event.clientX) {
@@ -202,18 +203,24 @@ scrollArea.onmousemove = function(event) {
 };
 
 borderLeft.onmousedown = function(event) {
+	event.preventDefault();
+
 	leftGrabber = true;
 	widthStart = parseInt(pointer.style.width);
 	x_start = event.clientX;
+	lastX = event.clientX;
 	leftStart = parseInt(pointer.style.left);
-	scrollArea.style.visibility = "visible";
+	scrollArea.style.display = "block";
 }
 borderRight.onmousedown = function(event) {
+	event.preventDefault();
+
 	rightGrabber = true;
 	widthStart = parseInt(pointer.style.width);
 	x_start = event.clientX;
+	lastX = event.clientX;
 	leftStart = parseInt(pointer.style.left);
-	scrollArea.style.visibility = "visible";
+	scrollArea.style.display = "block";
 }
 
 function ChangeGraphRatio() {
@@ -228,8 +235,6 @@ function ChangeGraphRatio() {
 }
 
 scrollArea.addEventListener("mousemove", function(event) {
-
-	event.preventDefault();
 
 	if (leftGrabber) {
 
@@ -250,21 +255,22 @@ scrollArea.addEventListener("mousemove", function(event) {
 					pointer.style.left = leftStart - x_start + event.clientX + "px";
 				}
 
-				ChangeGraphRatio();
-
 			} else {
 
 				if (!sizeHit) {
+					console.log("hitted");
 					sizeHit = true;
 					sizeLastX = event.clientX;
-				} else {
-					pointer.style.width = 10 * step_mini + "px";
 				}
+				pointer.style.width = 10 * step_mini + "px";
 
 			}
+
+			ChangeGraphRatio();
+
 		} else if (lastX > event.clientX) {
 
-			if (2 < parseInt(pointer.style.left)) {
+			if (0 < parseInt(pointer.style.left)) {
 
 				if (sizeHit) {
 
@@ -279,8 +285,6 @@ scrollArea.addEventListener("mousemove", function(event) {
 					pointer.style.left = leftStart - x_start + event.clientX + "px";
 				}
 
-				ChangeGraphRatio();
-
 			} else {
 
 				if (!sizeHit) {
@@ -293,16 +297,16 @@ scrollArea.addEventListener("mousemove", function(event) {
 
 			}
 
-		}
+			ChangeGraphRatio();
 
+		}
+		
 		lastX = event.clientX;
 
 	}
 });
 
 scrollArea.addEventListener("mousemove", function(event) {
-
-	event.preventDefault();
 
 	if (rightGrabber) {
 
@@ -314,6 +318,7 @@ scrollArea.addEventListener("mousemove", function(event) {
 
 					if (event.clientX > sizeLastX) {
 						pointer.style.width = widthStart - x_start + event.clientX + "px";
+						sizeHit = false;
 					}
 
 				} else {
@@ -327,9 +332,8 @@ scrollArea.addEventListener("mousemove", function(event) {
 				if (!sizeHit) {
 					sizeHit = true;
 					sizeLastX = event.clientX;
-				} else {
-					pointer.style.width = min - parseInt(pointer.style.left) + "px";
 				}
+				pointer.style.width = min - parseInt(pointer.style.left) + "px";
 
 			}
 
@@ -339,9 +343,11 @@ scrollArea.addEventListener("mousemove", function(event) {
 
 				if (sizeHit) {
 
-					if (event.clientX > sizeLastX) {
+					if (event.clientX < sizeLastX) {
 						pointer.style.width = widthStart - x_start + event.clientX + "px";
+						sizeHit = false;
 					}
+
 				} else {
 					pointer.style.width = widthStart - x_start + event.clientX + "px";
 				}
@@ -371,7 +377,7 @@ scrollArea.onmouseout = function() {
 	rightGrabber = false;
 	moveHit = 0;
 	sizeHit = 0;
-	scrollArea.style.visibility = "hidden";
+	scrollArea.style.display = "none";
 }
 
 scrollArea.onmouseup = function() {
@@ -380,7 +386,7 @@ scrollArea.onmouseup = function() {
 	rightGrabber = false;
 	moveHit = 0;
 	sizeHit = 0;
-	scrollArea.style.visibility = "hidden";
+	scrollArea.style.display = "none";
 }
 
 
