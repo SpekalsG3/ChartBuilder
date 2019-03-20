@@ -21,6 +21,8 @@ var buttons = document.getElementById("buttons"),
 var pillar = document.getElementById("pillar"),
 	overcanvas = document.getElementById("overcanvas");
 
+var night = document.getElementById("nightmode");
+
 var charts = [],
 	charts_mini = [],
 	ctx_main = [],
@@ -171,6 +173,7 @@ setTimeout(function(){
 
 			/*var time = new Date(data[0].columns[0][i-1]);
 			var timeStamp = document.createElement("div");
+			timeStamp.style.width = Math.floor(min / 6) + "px";
 			timeStamp.innerHTML = time.toDateString().substr(4,6);
 
 			timeAnchores.appendChild(timeStamp);*/
@@ -203,19 +206,34 @@ setTimeout(function(){
 			var index = parseInt(this.getAttribute("index"));
 
 			if (showFlag[index]) {
-				HideChart(this, charts[index], points[index]);
-				HideChart(this, charts_mini[index], points[index]);
+				HideChart(charts[index]);
+				HideChart(charts_mini[index]);
+				this.children[0].children[0].children[0].style.width = "23px";
+				this.children[0].children[0].children[0].style.height = "23px";
+				points[index].style.opacity = 0;
+				hints[index].style.opacity = 0;
 				//ResizeChart(joinedShow, left);
 				showFlag[index] = false;
 			} else {
-				ShowChart(this, charts[index], points[index]);
-				ShowChart(this, charts_mini[index], points[index]);
+				ShowChart(charts[index]);
+				ShowChart(charts_mini[index]);
+				this.children[0].children[0].children[0].style.width = 0;
+				this.children[0].children[0].children[0].style.height = 0;
+				points[index].style.opacity = 1;
+				hints[index].style.opacity = 1;
 				//ResizeChart(joinedShow, left);
 				showFlag[index] = true;
 			}
 		}
 	}
 }, 500);
+
+function ShowChart(chart) {
+	chart.style.opacity = 1;
+}
+function HideChart(chart) {
+	chart.style.opacity = 0;
+}
 
 
 var scroll = false,
@@ -307,6 +325,15 @@ function ChangeGraphRatio() {
 		charts[i].style.height = cnvsHeight + "px";
 	}
 
+	/*skip = Math.floor(min / (step * 6));
+	for (var i = 0; i < timeAnchores.length; i++) {
+		if (i != 0 && i % skip) {
+			timeAnchores[i].style.display = "none";
+		} else {
+			timeAnchores[i].style.display = "inline-block";
+		}
+	}*/
+
 	MoveGraph();
 }
 
@@ -385,19 +412,6 @@ function ResizeChart(flag, chart) {
 	chart.style.height = cnvsHeight + "px";
 }
 
-function ShowChart(swticher, chart, point) {
-	swticher.children[0].children[0].children[0].style.width = 0;
-	swticher.children[0].children[0].children[0].style.height = 0;
-	chart.style.opacity = 1;
-	point.style.opacity = 1;
-}
-function HideChart(swticher, chart, point) {
-	swticher.children[0].children[0].children[0].style.width = "23px";
-	swticher.children[0].children[0].children[0].style.height = "23px";
-	chart.style.opacity = 0;
-	point.style.opacity = 0;
-}
-
 /*function ResizeLeftChart() {
 	var lastHeight = cnvsHeight;
 
@@ -425,7 +439,7 @@ overcanvas.onmousemove = function(event) {
 		hints[i].firstElementChild.firstElementChild.innerHTML = data[0].columns[i+1][count];
 		points[i].style.bottom = (data[0].columns[i+1][count] * charts[i].height) / (max*1.1) - 7;
 	}
-	pillar.style.left = count * step + "px";
+	pillar.style.left = count * step - 1 + "px";
 
 	var time = new Date(data[0].columns[0][count]);
 	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
@@ -434,6 +448,48 @@ overcanvas.onmousemove = function(event) {
 overcanvas.onmouseout = function() {
 	pillar.style.opacity = 0;
 }
+
+var day = true;
+
+function ChangeColor(hex, rgba, color, text) {
+	document.body.style.background = hex;
+
+	for (var i = 0; i < points.length; i++) {
+		points[i].style.background = hex;
+		switchers[i].firstElementChild.firstElementChild.firstElementChild.style.background = hex;
+		switchers[i].style.border = "1px solid " + rgba;
+		switchers[i].style.color = color;
+	}
+
+	hintBox.style.background = hex;
+	pointer.style.borderBottom = "1px solid " + rgba;
+	pointer.style.borderTop = "1px solid " + rgba;
+	borderLeft.style.background = rgba;
+	borderRight.style.background = rgba;
+	hintBox.firstElementChild.style.color = color;
+	night.style.color = color;
+	night.firstElementChild.innerHTML = text;
+	pillar.style.background = rgba;
+
+	for (var i = 0; i < dataAnchores.length; i++) {
+		dataAnchores[i].style.color = rgba;
+		dataAnchores[i].style.borderBottom = "1px solid " + rgba;
+	}
+}
+
+night.onclick = function() {
+	if (day) {
+		ChangeColor("#232F3D", "rgba(255,255,255,.2)", "white", "Day");
+		day = false;
+	} else {
+		ChangeColor("white", "rgba(0,0,0,.2)", "black", "Night");
+		day = true;
+	}
+}
+
+
+
+
 
 
 
