@@ -14,11 +14,12 @@
 		/*overflow: hidden;*/
 	}
 	div#box {
+		position: relative;
 		width: 100%;
 		max-width: 600px;
 		height: 100%;
 		max-height: 800px;
-		background: #eee;
+		/*background: #eee;*/
 		/*overflow: hidden;*/
 	}
 
@@ -56,9 +57,13 @@
 		z-index: 99;
 	}
 
-	div#main {
+	div.maincharts {
 		position: relative;
 		height: 400px;
+	}
+	div#main {
+		position: relative;
+		transition: .1s ease-out;
 	}
 
 	div#scroll {
@@ -78,13 +83,11 @@
 	div.graph canvas {
 		position: absolute;
 		transition: .1s ease-out;
-	}
-	div#scroll canvas {
-		top: 0;
+		left: 0;
 	}
 
-	div#point {
-		position: relative;
+	div#pointer {
+		position: absolute;
 		height: 78px;
 		border-top: 1px solid rgba(0,0,0,.2);
 		border-bottom: 1px solid rgba(0,0,0,.2);
@@ -164,14 +167,51 @@
 		border-radius: 0 0 0 10px;
 		z-index: 100;
 	}
+	div.day {
+		text-align: center;
+	}
+
 	div.sumContainer {
 		display: inline-block;
 		width: 50px;
 	}
 
-	div.pillar {
+	div#pillar {
 		position: absolute;
+		width: 2px;
+		height: 100%;
+		bottom: 10px;
+		background: rgba(0,0,0,.2);
+		transition: .1s ease-out;
+		opacity: 0;
 	}
+	div.point {
+		position: absolute;
+		width: 8px;
+		height: 8px;
+		left: -6px;
+		background: white;
+		border-radius: 50%;
+		transition: .1s ease-out;
+		z-index: 99;
+		/*border: 2px solid green;*/
+	}
+	div#overcanvas {
+		position: absolute;
+		height: 100%;
+		width: 100%;
+		z-index: 100;
+	}
+
+	div#nightmode {
+		position: absolute;
+		width: 100%;
+		text-align: center;
+		bottom: 0;
+		padding: 10px 0;
+	/*	Night Background: #232F3D	*/
+	}
+
 
 	</style>
 </head>
@@ -191,27 +231,23 @@
 			</div>
 
 			<div id="hints">
-				<div id="day"></div>
-				<!-- <div class="sumContainer">
-					<div id="sumJoined" class="flex"><span>142</span>Joined</div>
-				</div>
-				<div class="sumContainer">
-					<div id="sumLeft" class="flex"><span>67</span>Left</div>
-				</div> -->
+				<div class="day"></div>
 			</div>
+
 		</div>
 
 		<div class="graph">
 
-			<div id="main">
-				<div class="pillar">
-					<div id="joinedPoint"></div>
-					<div id="leftPoint"></div>
+			<div class="maincharts">
+				<div id="overcanvas"></div>
+				<div id="main">
+					<div id="pillar">
+					</div>
 				</div>
 			</div>
 			<div id="scroll">
 				<div id="scrollArea"></div>
-				<div id="point">
+				<div id="pointer">
 					<div class="border" id="left_border"></div>
 					<div class="border" id="right_border"></div>
 				</div>
@@ -219,8 +255,10 @@
 
 			<div id="buttons">
 			</div>
-			
+
 		</div>
+
+			<div id="nightmode">Switch To Night Mode</div>
 
 	</div>
 
