@@ -61,7 +61,7 @@ xhr.open("GET", "chart_data.json");
 xhr.responseType = "json";
 xhr.send();
 
-function InitCanvasProperties(cnvs, ctxt, leftGap, start, color, lineWidth) {
+function InitCanvasProperties(cnvs, ctxt, leftGap, fault, start, color, lineWidth) {
 	cnvs.style.left = leftGap;
 	//cnvs.height = cnvsHeight;
 	cnvs.width = cnvsWidth;
@@ -69,7 +69,7 @@ function InitCanvasProperties(cnvs, ctxt, leftGap, start, color, lineWidth) {
 	ctxt.strokeStyle = color;
 	ctxt.lineWidth = lineWidth;
 	ctxt.beginPath();
-	ctxt.moveTo(0, cnvs.height - (start * cnvs.height) / (max*1.1));
+	ctxt.moveTo(0, cnvs.height - fault - (start * cnvs.height) / (max*1.1));
 }
 
 function DrawBigChart(cnvs, ctxt, clmn, iter) {
@@ -81,7 +81,7 @@ function DrawMiniChart(cnvs, ctxt, clmn, iter) {
 					(data[0].columns[clmn][iter] * cnvs.height) / (max*1.1));
 }
 
-setTimeout(function(){
+setTimeout(function() {
 	console.log(data);
 
 	for (var i = 0; i < data[0].columns.length; i++) {
@@ -164,19 +164,23 @@ setTimeout(function(){
 	mainCharts.style.height = cnvsHeight + "px";
 
 	for (var j = 0; j < charts.length; j++) {//-cnvsWidth + min + "px"
-		InitCanvasProperties(charts[j], ctx_main[j], 0, data[0].columns[j+1][0], data[0].colors["y"+j], 6);
-		InitCanvasProperties(charts_mini[j], ctx_mini[j], 0, data[0].columns[j+1][0], data[0].colors["y"+j], 2);
+		InitCanvasProperties(charts[j], ctx_main[j], 0, 10, data[0].columns[j+1][0], data[0].colors["y"+j], 6);
+		InitCanvasProperties(charts_mini[j], ctx_mini[j], 0, 5, data[0].columns[j+1][0], data[0].colors["y"+j], 2);
 	}
 
 	for (var j = 0; j < charts.length; j++) {
 		for (var i = 1; i < data[0].columns[0].length+1; i++) {
 
-			/*var time = new Date(data[0].columns[0][i-1]);
-			var timeStamp = document.createElement("div");
-			timeStamp.style.width = Math.floor(min / 6) + "px";
-			timeStamp.innerHTML = time.toDateString().substr(4,6);
+			if (j == 0) {
+				var time = new Date(data[0].columns[0][i-1]);
+				var timeStamp = document.createElement("div");
 
-			timeAnchores.appendChild(timeStamp);*/
+				timeStamp.style.width = "120px";
+				//timeStamp.style.width = Math.floor(min / 5) + "px";
+				timeStamp.innerHTML = time.toDateString().substr(4,6);
+
+				timeAnchores.appendChild(timeStamp);
+			}
 
 			DrawBigChart(charts[j], ctx_main[j], j+1, i);
 			DrawMiniChart(charts_mini[j], ctx_mini[j], j+1, i);
@@ -226,7 +230,7 @@ setTimeout(function(){
 			}
 		}
 	}
-}, 500);
+}, 700);
 
 function ShowChart(chart) {
 	chart.style.opacity = 1;
@@ -284,6 +288,7 @@ pointer.onmousedown = function(event) {
 scrollArea.onmousemove = function(event) {
 
 	if (scroll) {
+		scrollArea.style.cursor = "grabbing";
 
 		CheckPointerOut();
 
@@ -325,22 +330,52 @@ function ChangeGraphRatio() {
 		charts[i].style.height = cnvsHeight + "px";
 	}
 
-	/*skip = Math.floor(min / (step * 6));
+	var skip = Math.round(parseInt(timeAnchores[0].style.width) / Math.floor(step));
+	var isRelative = 0;
+
+	/*	SKIP - 2
+	step - 60,
+	cnvsWidth - 6666,
+	min - 600,
+	timeAnchore - 120,
+
+
+	*/
+
+	/*	SKIP - 27
+	step - 5,
+	cnvsWidth - 600,
+	min - 600,
+	timeAnchore - 120
+
+	timeAnchore / step ??!
+	120 / 600 = 5 / x
+	*/
 	for (var i = 0; i < timeAnchores.length; i++) {
-		if (i != 0 && i % skip) {
+		if (i % skip != 0) {
+			timeAnchores[i].style.opacity = 0;
 			timeAnchores[i].style.display = "none";
 		} else {
+			timeAnchores[i].style.opacity = 1;
 			timeAnchores[i].style.display = "inline-block";
+			isRelative++;
 		}
+	}
+
+	/*var newTimeWidth = Math.floor(cnvsWidth / isRelative);
+
+	for (var i = 0; i < timeAnchores.length; i++) {
+		timeAnchores[i].style.width = newTimeWidth + "px";
 	}*/
 
 	MoveGraph();
 }
 
 function CheckPointerSize() {
-	if (parseInt(pointer.style.width) < Math.floor(10 * step_mini)) {
+	if (parseInt(pointer.style.width) < 10 * step_mini) {
 		pointer.style.width = 10 * step_mini + "px";
 		sizeFree = false;
+		console.log("NO");
 	} else if (0 > parseInt(pointer.style.left)) {
 		pointer.style.left = 0;
 		sizeFree = false;
@@ -349,52 +384,67 @@ function CheckPointerSize() {
 		sizeFree = false;
 	} else {
 		sizeFree = true;
+		console.log("YES");
 	}
+	//console.log(sizeFree);
 
 	ChangeGraphRatio();
 }
 
 scrollArea.addEventListener("mousemove", function(event) {
 
-	CheckPointerSize();
+	CheckPointerSize(event, event.clientX);
 
 	if (leftGrabber) {
+
+		/*	Сделать тут проверку с event.clientX и lastX, чтобы знать когда обратно идет расширение	*/
+
+		//CheckPointerSizeLeft(event, event.clientX);
+
+		scrollArea.style.cursor = "col-resize";
 
 		if (sizeFree) {
 			pointer.style.width = widthStart + x_start - event.clientX + "px";
 			pointer.style.left = leftStart - x_start + event.clientX + "px";
 		}
 
+		//CheckPointerSizeLeft(event, event.clientX);
+
 	} else if (rightGrabber) {
+
+		//CheckPointerSizeRight(event, event.clientX);
+
+		scrollArea.style.cursor = "col-resize";
 
 		if (sizeFree) {
 			pointer.style.width = widthStart - x_start + event.clientX + "px";
 		}
 
+		//CheckPointerSizeRight(event, event.clientX);
+
 	}
 
-	CheckPointerSize();
+	CheckPointerSize(event, event.clientX);
 });
 
-scrollArea.onmouseout = function() {
+function Reset() {
 	scroll = false;
 	leftGrabber = false;
 	rightGrabber = false;
 	moveFree = true;
 	sizeFree = true;
 	scrollArea.style.display = "none";
+}
+
+scrollArea.onmouseout = function() {
+	Reset();
 }
 
 scrollArea.onmouseup = function() {
-	scroll = false;
-	leftGrabber = false;
-	rightGrabber = false;
-	moveFree = true;
-	sizeFree = true;
-	scrollArea.style.display = "none";
+	Reset();
 }
 
-function ResizeChart(flag, chart) {
+/*function ResizeChart(flag, chart) {
 	var lastHeight = cnvsHeight;
 
 	if (flag) {
@@ -410,24 +460,7 @@ function ResizeChart(flag, chart) {
 	}
 
 	chart.style.height = cnvsHeight + "px";
-}
-
-/*function ResizeLeftChart() {
-	var lastHeight = cnvsHeight;
-
-	if (joinedShow) {
-		max = Math.max(maxJoined, maxLeft);
-		cnvsHeight = max * Math.min(maxJoined, maxLeft) / parseInt(left.style.height);
-		left.style.top = -(joined.height - lastHeight + cnvsHeight) + "px";
-	} else {
-		max = Math.min(maxJoined, maxLeft);
-		cnvsHeight = max * Math.max(maxJoined, maxLeft) / parseInt(left.style.height);
-		left.style.top = -joined.height + "px";
-	}
-
-	left.style.height = cnvsHeight + "px";
 }*/
-
 
 overcanvas.onmousemove = function(event) {
 	//console.log(event);
@@ -470,19 +503,22 @@ function ChangeColor(hex, rgba, color, text) {
 	night.style.color = color;
 	night.firstElementChild.innerHTML = text;
 	pillar.style.background = rgba;
+	mainCharts.style.color = rgba;
 
 	for (var i = 0; i < dataAnchores.length; i++) {
 		dataAnchores[i].style.color = rgba;
 		dataAnchores[i].style.borderBottom = "1px solid " + rgba;
 	}
+
+
 }
 
 night.onclick = function() {
 	if (day) {
-		ChangeColor("#232F3D", "rgba(255,255,255,.2)", "white", "Day");
+		ChangeColor("#232F3D", "rgba(255,255,255,.3)", "white", "Day");
 		day = false;
 	} else {
-		ChangeColor("white", "rgba(0,0,0,.2)", "black", "Night");
+		ChangeColor("white", "rgba(0,0,0,.3)", "black", "Night");
 		day = true;
 	}
 }

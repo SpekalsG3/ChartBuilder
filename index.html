@@ -39,19 +39,24 @@
 	div#data div {
 		width: 100%;
 		color: rgba(0,0,0,.5);
-		border-bottom: 1px solid rgba(0,0,0,.2);
+		border-bottom: 1px solid rgba(0,0,0,.3);
 		margin: 10px 0;
 	}
 
 	div#timeStamps {
+		float: right;
+		width: 100%;
 		position: absolute;
 		height: 20px;
 		bottom: -20px;
 		white-space: nowrap;
 	}
 	div#timeStamps div {
+		position: relative;
 		width: 60px;
-		display: inline-block;
+		transition: .1s;
+		/*display: inline-block;*/
+		text-align: center;
 	}
 
 	div.graph {
@@ -67,6 +72,7 @@
 	div#main {
 		position: relative;
 		transition: .1s ease-out;
+		color: rgba(0,0,0,.3);
 	}
 
 	div#scroll {
@@ -92,8 +98,8 @@
 	div#pointer {
 		position: absolute;
 		height: 78px;
-		border-top: 1px solid rgba(0,0,0,.2);
-		border-bottom: 1px solid rgba(0,0,0,.2);
+		border-top: 1px solid rgba(0,0,0,.3);
+		border-bottom: 1px solid rgba(0,0,0,.3);
 		border-radius: 4px;
 		display: none;
 		cursor: grab;
@@ -105,7 +111,7 @@
 		width: 10px;
 		height: 78px;
 		border-radius: 50px;
-		background: rgba(0,0,0,.2);
+		background: rgba(0,0,0,.3);
 		cursor: col-resize;
 	}
 	div#left_border {
@@ -123,7 +129,7 @@
 		display: inline-block;
 		position: relative;
 		border-radius: 50px;
-		border: 1px solid rgba(0,0,0,.2);
+		border: 1px solid rgba(0,0,0,.3);
 		padding: 3px 10px 3px 5px;
 		cursor: pointer;
 	}
@@ -179,7 +185,7 @@
 		width: 2px;
 		height: 100%;
 		bottom: 10px;
-		background: rgba(0,0,0,.2);
+		background: rgba(0,0,0,.3);
 		transition: .1s ease-out;
 		opacity: 0;
 	}
@@ -206,9 +212,11 @@
 		width: 100%;
 		text-align: center;
 		bottom: 5%;
-		padding: 10px 0;
 		cursor: pointer;
-	/*	Night Background: #232F3D	*/
+		height: 50px;
+	}
+	div#nightmode span {
+		margin: 0 5px;
 	}
 
 
@@ -238,7 +246,7 @@
 			<div class="maincharts">
 				<div id="overcanvas"></div>
 				<div id="main">
-					<div id="timeStamps">
+					<div id="timeStamps" class="flex">
 					</div>
 
 					<div id="pillar">
@@ -258,7 +266,7 @@
 
 		</div>
 
-		<div id="nightmode">Switch To <span>Night</span> Mode</div>
+		<div id="nightmode" class="flex">Switch To <span>Night</span> Mode</div>
 
 	</div>
 
