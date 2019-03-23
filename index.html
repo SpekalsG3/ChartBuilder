@@ -12,7 +12,6 @@
 		height: 100vh;
 		margin: 0;
 		transition: .1s;
-		/*overflow: hidden;*/
 	}
 	div#box {
 		position: relative;
@@ -20,8 +19,7 @@
 		max-width: 600px;
 		height: 100%;
 		max-height: 800px;
-		/*background: #eee;*/
-		/*overflow: hidden;*/
+		overflow: hidden;
 	}
 
 	div.axes {
@@ -44,7 +42,6 @@
 	}
 
 	div#timeStamps {
-		float: right;
 		width: 100%;
 		position: absolute;
 		height: 20px;
@@ -55,7 +52,7 @@
 		position: relative;
 		width: 60px;
 		transition: .1s;
-		/*display: inline-block;*/
+		display: inline-block;
 		text-align: center;
 	}
 
@@ -175,8 +172,8 @@
 	}
 
 	div.sumContainer {
+		margin: 0 10px;
 		display: inline-block;
-		width: 50px;
 		transition: .1s;
 	}
 
@@ -207,16 +204,42 @@
 		z-index: 100;
 	}
 
-	div#nightmode {
+	div.options {
 		position: absolute;
 		width: 100%;
-		text-align: center;
 		bottom: 5%;
+	}
+	div.options div.flex {
 		cursor: pointer;
 		height: 50px;
+		text-align: center;
 	}
 	div#nightmode span {
 		margin: 0 5px;
+	}
+
+	div.selection {
+		transition: .1s ease-out;
+		opacity: 1;
+		visibility: hidden;
+		position: absolute;
+		top: -10px;
+		border-radius: 10px;
+		box-shadow: 0 1px 3px 0 rgba(0,0,0,.5);
+	}
+	div.selection div {
+		display: inline-block;
+		width: 1.5em;
+		margin: 5px 0;
+	}
+
+	div#blocker {
+		background: white;
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		z-index: 200;
+		display: block;
 	}
 
 
@@ -237,20 +260,24 @@
 
 			<div id="hints">
 				<div class="day"></div>
+				<div></div>
 			</div>
 
 		</div>
 
 		<div class="graph">
+			<div id="blocker"></div>
 
 			<div class="maincharts">
 				<div id="overcanvas"></div>
 				<div id="main">
-					<div id="timeStamps" class="flex">
+					<div id="timeStamps">
 					</div>
 
 					<div id="pillar">
 					</div>
+
+					<div></div>
 				</div>
 			</div>
 			<div id="scroll">
@@ -259,6 +286,7 @@
 					<div class="border" id="left_border"></div>
 					<div class="border" id="right_border"></div>
 				</div>
+				<div></div>
 			</div>
 
 			<div id="buttons">
@@ -266,7 +294,14 @@
 
 		</div>
 
-		<div id="nightmode" class="flex">Switch To <span>Night</span> Mode</div>
+		<div class="options">
+			<div id="charts" class="flex">Select Chart
+				<div class="selection">
+				</div>
+			</div>
+
+			<div id="nightmode" class="flex">Switch To <span>Night</span> Mode</div>
+		</div>
 
 	</div>
 

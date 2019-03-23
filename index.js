@@ -6,12 +6,6 @@ var scrollArea = document.getElementById("scrollArea"),
 var dataAnchores = document.getElementById("data").children,
 	timeAnchores = document.getElementById("timeStamps");
 
-var switchJoined = document.getElementById("switchJoined"),
-	switchLeft = document.getElementById("switchLeft");
-
-var sumJoined = document.getElementById("sumJoined"),
-	sumLeft = document.getElementById("sumLeft");
-
 var mainCharts = document.getElementById("main"),
 	miniCharts = document.getElementById("scroll");
 
@@ -23,6 +17,11 @@ var pillar = document.getElementById("pillar"),
 
 var night = document.getElementById("nightmode");
 
+var selection = document.getElementById("charts"),
+	chooseChart = selection.firstElementChild;
+
+var blocker = document.getElementById("blocker");
+
 var charts = [],
 	charts_mini = [],
 	ctx_main = [],
@@ -30,7 +29,9 @@ var charts = [],
 	switchers = [],
 	showFlag = [],
 	hints = [],
-	points = [];
+	points = [],
+	allKeys = [],
+	colors = ["white", "rgba(0,0,0,.3)", "black", "Night"];
 
 var min,
 	data, xhr,
@@ -39,10 +40,30 @@ var min,
 	cnvsWidth,
 	cnvsHeight = 400;
 
+var ThisChart,
+	timeline;
+
 if (window.innerWidth > 600) {
 	min = 600;
 } else {
 	min = window.innerWidth;
+}
+
+window.onresize = function() {
+	if (window.innerWidth > 600) {
+		min = 600;
+	} else {
+		min = window.innerWidth;
+	}
+
+	pointer.style.left = min - parseInt(pointer.style.width); + "px";
+
+	for (var i = 0; i < charts_mini.length; i++) {
+		charts_mini[i].style.width = min + "px";
+		charts_mini[i].style.height = 80 + "px";
+	}
+
+	ChangeGraphRatio();
 }
 
 if (window.XMLHttpRequest) {
@@ -61,11 +82,11 @@ xhr.open("GET", "chart_data.json");
 xhr.responseType = "json";
 xhr.send();
 
-function InitCanvasProperties(cnvs, ctxt, leftGap, fault, start, color, lineWidth) {
+function InitCanvasProperties(cnvs, ctxt, wdth, leftGap, fault, start, color, lineWidth) {
 	cnvs.style.left = leftGap;
 	//cnvs.height = cnvsHeight;
-	cnvs.width = cnvsWidth;
-	cnvs.style.width = cnvsWidth + "px";
+	cnvs.width = wdth;
+	cnvs.style.width = wdth + "px";
 	ctxt.strokeStyle = color;
 	ctxt.lineWidth = lineWidth;
 	ctxt.beginPath();
@@ -74,34 +95,33 @@ function InitCanvasProperties(cnvs, ctxt, leftGap, fault, start, color, lineWidt
 
 function DrawBigChart(cnvs, ctxt, clmn, iter) {
 	ctxt.lineTo(step * (iter), cnvs.height - 10 -
-				(data[0].columns[clmn][iter] * cnvs.height) / (max*1.1));
+				(data[ThisChart].columns[clmn][iter] * cnvs.height) / (max*1.1));
 }
 function DrawMiniChart(cnvs, ctxt, clmn, iter) {
 	ctxt.lineTo(step_mini * (iter), cnvs.height - 5 -
-					(data[0].columns[clmn][iter] * cnvs.height) / (max*1.1));
+					(data[ThisChart].columns[clmn][iter] * cnvs.height) / (max*1.1));
 }
 
-setTimeout(function() {
-	console.log(data);
+function StartGraph() {
+	blocker.style.display = "block";
 
-	for (var i = 0; i < data[0].columns.length; i++) {
-		data[0].columns[i].shift();
+	for (var i = 0; i < data[ThisChart].columns.length; i++) {
 
 		if (i > 0) {
 			var bigCanvas = document.createElement("canvas");
 			bigCanvas.setAttribute("height", 400);
 			bigCanvas.setAttribute("width", 24);
 			//bigCanvas.style.top = -(bigCanvas.height * (i-1)) + "px";
-			mainCharts.appendChild(bigCanvas);
+			mainCharts.lastElementChild.appendChild(bigCanvas);
 			charts[i-1] = bigCanvas;
 			ctx_main[i-1] = bigCanvas.getContext("2d");
 
-			var smallCanvas = document.createElement("canvas");
-			smallCanvas.setAttribute("height", 80);
-			//smallCanvas.style.top = -(smallCanvas.height * (i-1)) + "px";
-			miniCharts.appendChild(smallCanvas);
-			charts_mini[i-1] = smallCanvas;
-			ctx_mini[i-1] = smallCanvas.getContext("2d");
+			var smallKeysCanvas = document.createElement("canvas");
+			smallKeysCanvas.setAttribute("height", 80);
+			//smallKeysCanvas.style.top = -(smallKeysCanvas.height * (i-1)) + "px";
+			miniCharts.lastElementChild.appendChild(smallKeysCanvas);
+			charts_mini[i-1] = smallKeysCanvas;
+			ctx_mini[i-1] = smallKeysCanvas.getContext("2d");
 
 			var btn = document.createElement("div");
 			btn.className = "switchers";
@@ -109,9 +129,9 @@ setTimeout(function() {
 			swtch.classList.add("swtchbtn", "flex");
 			var led = document.createElement("div");
 			led.classList.add("led", "flex");
-			led.style.background = data[0].colors["y"+(i-1)];
+			led.style.background = data[ThisChart].colors["y"+(i-1)];
 			var name = document.createElement("span");
-			name.innerHTML = data[0].names["y"+(i-1)];
+			name.innerHTML = data[ThisChart].names["y"+(i-1)];
 			led.appendChild(document.createElement("div"));
 			swtch.appendChild(led);
 			swtch.appendChild(name);
@@ -125,54 +145,54 @@ setTimeout(function() {
 			hint.className = "sumContainer";
 			var text = document.createElement("div");
 			text.className = "flex";
-			text.style.color = data[0].colors["y"+(i-1)];
+			text.style.color = data[ThisChart].colors["y"+(i-1)];
 			text.style.flexDirection = "column";
 			var num = document.createElement("span");
 			num.style.fontSize = "20px";
-			num.innerHTML = data[0].columns[i][data[0].columns[i].length-1];
+			num.innerHTML = data[ThisChart].columns[i][data[ThisChart].columns[i].length-1];
 			text.appendChild(num);
-			text.innerHTML += data[0].names["y"+(i-1)];
+			text.innerHTML += data[ThisChart].names["y"+(i-1)];
 			hint.appendChild(text);
-			hintBox.appendChild(hint);
+			hintBox.lastElementChild.appendChild(hint);
 			hints[i-1] = hint;
 
 			var point = document.createElement("div");
 			point.className = "point";
-			point.style.border = "3px solid " + data[0].colors["y"+(i-1)];
+			point.style.border = "3px solid " + data[ThisChart].colors["y"+(i-1)];
 			pillar.appendChild(point);
 			points[i-1] = point;
 		}
 	}
 
-	var time = new Date(data[0].columns[0][data[0].columns[0].length-1]);
-	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
-
-	maxJoined = Math.max.apply(null, data[0].columns[1]);
-	maxLeft = Math.max.apply(null, data[0].columns[2]);
+	maxJoined = Math.max.apply(null, data[ThisChart].columns[1]);
+	maxLeft = Math.max.apply(null, data[ThisChart].columns[2]);
 	max = Math.max(maxJoined, maxLeft);
+
+	var time = new Date(data[ThisChart].columns[0][data[ThisChart].columns[0].length-1]);
+	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
 
 	for (var i = 0; i < dataAnchores.length; i++) {
 		dataAnchores[i].innerHTML = Math.floor((max / (dataAnchores.length-1)) * (i));
 	}
 
 	step = charts[0].width * 2.5;
-	cnvsWidth = (data[0].columns[1].length-1) * step;
+	cnvsWidth = (data[ThisChart].columns[1].length-1) * step;
 	step_mini = (step * min) / cnvsWidth;
-	//step = cnvsWidth / (data[0].columns[1].length-1);
+	//step = cnvsWidth / (data[ThisChart].columns[1].length-1);
 
 	mainCharts.style.width = cnvsWidth + "px";
 	mainCharts.style.height = cnvsHeight + "px";
 
-	for (var j = 0; j < charts.length; j++) {//-cnvsWidth + min + "px"
-		InitCanvasProperties(charts[j], ctx_main[j], 0, 10, data[0].columns[j+1][0], data[0].colors["y"+j], 6);
-		InitCanvasProperties(charts_mini[j], ctx_mini[j], 0, 5, data[0].columns[j+1][0], data[0].colors["y"+j], 2);
+	for (var j = 0; j < charts.length; j++) {
+		InitCanvasProperties(charts[j], ctx_main[j], cnvsWidth, 0, 10, data[ThisChart].columns[j+1][0], data[ThisChart].colors["y"+j], 6);
+		InitCanvasProperties(charts_mini[j], ctx_mini[j], min, 0, 5, data[ThisChart].columns[j+1][0], data[ThisChart].colors["y"+j], 2);
 	}
 
 	for (var j = 0; j < charts.length; j++) {
-		for (var i = 1; i < data[0].columns[0].length+1; i++) {
+		for (var i = 1; i < data[ThisChart].columns[0].length+1; i++) {
 
 			if (j == 0) {
-				var time = new Date(data[0].columns[0][i-1]);
+				var time = new Date(data[ThisChart].columns[0][i-1]);
 				var timeStamp = document.createElement("div");
 
 				timeStamp.style.width = "120px";
@@ -188,25 +208,8 @@ setTimeout(function() {
 		}
 	}
 
-	timeAnchores = timeAnchores.children;
-
-	for (var i = 0; i < ctx_main.length; i++) {
-		ctx_main[i].stroke();
-		ctx_mini[i].stroke();
-	}
-
-	cnvsWidth /= 2.5;
-
-	pointer.style.display = "block";
-	pointer.style.width = (min * min) / cnvsWidth + "px";
-	pointer.style.left = min - parseInt(pointer.style.width); + "px";
-
-	ChangeGraphRatio();
-
-
 	for (var i = 0; i < switchers.length; i++) {
 		switchers[i].onclick = function(event) {
-			event.preventDefault();
 			var index = parseInt(this.getAttribute("index"));
 
 			if (showFlag[index]) {
@@ -230,7 +233,97 @@ setTimeout(function() {
 			}
 		}
 	}
+
+	timeline = timeAnchores.children;
+
+	for (var i = 0; i < ctx_main.length; i++) {
+		ctx_main[i].stroke();
+		ctx_mini[i].stroke();
+	}
+
+	cnvsWidth /= 2.5;
+
+	pointer.style.display = "block";
+	if ((min * min) / cnvsWidth > 60) {
+		pointer.style.width = (min * min) / cnvsWidth + "px";
+	} else {
+		pointer.style.width = "60px";
+	}
+	pointer.style.left = min - parseInt(pointer.style.width); + "px";
+
+	ChangeGraphRatio();
+
+	blocker.style.display = "none";
+}
+
+function ShowEl(el, params = {}) {
+	chooseChart.style.opacity = 1;
+	chooseChart.style.visibility = "visible";
+}
+function HideEl(el, params = {}) {
+	chooseChart.style.opacity = 0;
+	chooseChart.style.visibility = "hidden";
+
+}
+
+function ClearAll() {
+	dataAnchores.innerHTML = '';
+	timeAnchores.innerHTML = '';
+	mainCharts.lastElementChild.innerHTML = '';
+	miniCharts.lastElementChild.innerHTML = '';
+	buttons.innerHTML = '';
+	hintBox.lastElementChild.innerHTML = '';
+	pillar.innerHTML = '';
+
+	charts = [];
+	charts_mini = [];
+	ctx_main = [];
+	ctx_mini = [];
+	switchers = [];
+	showFlag = [];
+	hints = [];
+	points = [];
+}
+
+
+setTimeout(function() {
+
+	var i = 0;
+	for (var key of data.keys()) {
+
+		if (i == 0) {
+			ThisChart = key;
+		}
+		var select = document.createElement("div");
+		select.innerHTML = key;
+		select.setAttribute("tab", i);
+
+		select.onclick = function() {
+			ThisChart = allKeys[parseInt(this.getAttribute("tab"))];
+			console.log(ThisChart);
+			ClearAll();
+			StartGraph();
+			ChangeColor(colors[0], colors[1], colors[2], colors[3]);
+		}
+
+		chooseChart.appendChild(select);
+		allKeys[i] = key;
+
+		i++;
+	}
+
+	for (var j = 0; j < data.length; j++) {
+		for (var i = 0; i < data[j].columns.length; i++) {
+			data[j].columns[i].shift();
+		}
+	}
+
+	StartGraph();
+
+	blocker.style.display = "none";
+
 }, 700);
+
 
 function ShowChart(chart) {
 	chart.style.opacity = 1;
@@ -273,109 +366,131 @@ function CheckPointerOut() {
 	MoveGraph();
 }
 
-pointer.onmousedown = function(event) {
-	event.preventDefault();
-
+function PointerMoveStart(event) {
 	if (!(leftGrabber || rightGrabber)) {
-		scroll = true;
-		x_start = event.clientX;
-		leftStart = parseInt(pointer.style.left);
-		lastX = event.clientX;
 		scrollArea.style.display = "block";
+
+		var X;
+		if (event.clientX === undefined) {
+			X = event.targetTouches[0].clientX;
+		} else {
+			X = event.clientX;
+		}
+
+		scroll = true;
+		x_start = X;
+		leftStart = parseInt(pointer.style.left);
+		lastX = X;
+
 	}
 }
 
-scrollArea.onmousemove = function(event) {
+pointer.onmousedown = function(event) {
+	PointerMoveStart(event);
+}
+pointer.ontouchstart = function(event) {
+	console.log(event);
+	PointerMoveStart(event);
+}
+
+function PointerMove(event) {
 
 	if (scroll) {
 		scrollArea.style.cursor = "grabbing";
 
 		CheckPointerOut();
 
+		var X;
+		if (event.clientX === undefined) {
+			X = event.targetTouches[0].clientX;
+		} else {
+			X = event.clientX;
+		}
+
 		if (moveFree) {
-			pointer.style.left = leftStart - x_start + event.clientX + "px";
+			pointer.style.left = leftStart - x_start + X + "px";
 		}
 
 		CheckPointerOut();
 	}
-};
+}
+
+scrollArea.onmousemove = function(event) {
+	PointerMove(event);
+}
+scrollArea.ontouchmove = function(event) {
+	event.preventDefault();
+	PointerMove(event);
+}
+
+function PointerResizeStart(event) {
+	widthStart = parseInt(pointer.style.width);
+	scrollArea.style.display = "block";
+
+	var X;
+	if (event.clientX === undefined) {
+		X = event.targetTouches[0].clientX;
+	} else {
+		X = event.clientX;
+	}
+
+	x_start = X;
+	leftStart = parseInt(pointer.style.left);
+}
 
 borderLeft.onmousedown = function(event) {
-	event.preventDefault();
-
+	PointerResizeStart(event);
 	leftGrabber = true;
-	widthStart = parseInt(pointer.style.width);
-	x_start = event.clientX;
-	leftStart = parseInt(pointer.style.left);
-	scrollArea.style.display = "block";
-
 }
+borderLeft.ontouchstart = function(event) {
+	PointerResizeStart(event);
+	leftGrabber = true;
+}
+
 borderRight.onmousedown = function(event) {
-	event.preventDefault();
-
+	PointerResizeStart(event);
 	rightGrabber = true;
-	widthStart = parseInt(pointer.style.width);
-	x_start = event.clientX;
-	leftStart = parseInt(pointer.style.left);
-	scrollArea.style.display = "block";
-
+}
+borderRight.ontouchstart = function(event) {
+	PointerResizeStart(event);
+	rightGrabber = true;
 }
 
 function ChangeGraphRatio() {
 	cnvsWidth = (min * min) / parseInt(pointer.style.width);
-	step = cnvsWidth / (data[0].columns[1].length-1);
+	step = cnvsWidth / (data[ThisChart].columns[1].length-1);
 	mainCharts.style.width = cnvsWidth + "px";
 	for (var i = 0; i < charts.length; i++) {
 		charts[i].style.width = cnvsWidth + "px";
 		charts[i].style.height = cnvsHeight + "px";
 	}
 
-	var skip = Math.round(parseInt(timeAnchores[0].style.width) / Math.floor(step));
+
+	//skip = Math.floor(min / (step * 5));
+	//skip = Math.floor(parseInt(timeline[0].style.width) / step);
+
+	var skip = Math.round(parseInt(timeline[0].style.width) / Math.floor(step));
 	var isRelative = 0;
 
-	/*	SKIP - 2
-	step - 60,
-	cnvsWidth - 6666,
-	min - 600,
-	timeAnchore - 120,
-
-
-	*/
-
-	/*	SKIP - 27
-	step - 5,
-	cnvsWidth - 600,
-	min - 600,
-	timeAnchore - 120
-
-	timeAnchore / step ??!
-	120 / 600 = 5 / x
-	*/
-	for (var i = 0; i < timeAnchores.length; i++) {
+	for (var i = 0; i < timeline.length; i++) {
 		if (i % skip != 0) {
-			timeAnchores[i].style.opacity = 0;
-			timeAnchores[i].style.display = "none";
+			timeline[i].style.opacity = 0;
+			timeline[i].style.display = "none";
 		} else {
-			timeAnchores[i].style.opacity = 1;
-			timeAnchores[i].style.display = "inline-block";
+			timeline[i].style.opacity = 1;
+			timeline[i].style.display = "inline-block";
 			isRelative++;
 		}
 	}
-
-	/*var newTimeWidth = Math.floor(cnvsWidth / isRelative);
-
-	for (var i = 0; i < timeAnchores.length; i++) {
-		timeAnchores[i].style.width = newTimeWidth + "px";
-	}*/
 
 	MoveGraph();
 }
 
 function CheckPointerSize() {
-	if (parseInt(pointer.style.width) < 10 * step_mini) {
-		pointer.style.width = 10 * step_mini + "px";
+	if (parseInt(pointer.style.width) < 60) {
+		pointer.style.width = "60px";
 		sizeFree = false;
-		console.log("NO");
+		//console.log("NO");
 	} else if (0 > parseInt(pointer.style.left)) {
 		pointer.style.left = 0;
 		sizeFree = false;
@@ -384,47 +499,62 @@ function CheckPointerSize() {
 		sizeFree = false;
 	} else {
 		sizeFree = true;
-		console.log("YES");
+		//console.log("YES");
 	}
 	//console.log(sizeFree);
 
 	ChangeGraphRatio();
 }
 
-scrollArea.addEventListener("mousemove", function(event) {
+function PointerResize(event) {
 
-	CheckPointerSize(event, event.clientX);
+	var X;
+	if (event.clientX === undefined) {
+		X = event.targetTouches[0].clientX;
+	} else {
+		X = event.clientX;
+	}
+
+	CheckPointerSize(event, X);
 
 	if (leftGrabber) {
 
-		/*	Сделать тут проверку с event.clientX и lastX, чтобы знать когда обратно идет расширение	*/
+		/*	Сделать тут проверку с X и lastX, чтобы знать когда обратно идет расширение	*/
 
-		//CheckPointerSizeLeft(event, event.clientX);
+		//CheckPointerSizeLeft(event, X);
 
 		scrollArea.style.cursor = "col-resize";
 
 		if (sizeFree) {
-			pointer.style.width = widthStart + x_start - event.clientX + "px";
-			pointer.style.left = leftStart - x_start + event.clientX + "px";
+			pointer.style.width = widthStart + x_start - X + "px";
+			pointer.style.left = leftStart - x_start + X + "px";
 		}
 
-		//CheckPointerSizeLeft(event, event.clientX);
+		//CheckPointerSizeLeft(event, X);
 
 	} else if (rightGrabber) {
 
-		//CheckPointerSizeRight(event, event.clientX);
+		//CheckPointerSizeRight(event, X);
 
 		scrollArea.style.cursor = "col-resize";
 
 		if (sizeFree) {
-			pointer.style.width = widthStart - x_start + event.clientX + "px";
+			pointer.style.width = widthStart - x_start + X + "px";
 		}
 
-		//CheckPointerSizeRight(event, event.clientX);
+		//CheckPointerSizeRight(event, X);
 
 	}
 
-	CheckPointerSize(event, event.clientX);
+	CheckPointerSize(event, X);
+}
+
+scrollArea.addEventListener("mousemove", function(event){
+	PointerResize(event);
+});
+scrollArea.addEventListener("touchstart", function(event) {
+	event.preventDefault();
+	PointerResize(event);
 });
 
 function Reset() {
@@ -436,13 +566,12 @@ function Reset() {
 	scrollArea.style.display = "none";
 }
 
-scrollArea.onmouseout = function() {
+scrollArea.onmouseout = Reset;
+scrollArea.ontouchend = function(event) {
+	event.preventDefault();
 	Reset();
 }
-
-scrollArea.onmouseup = function() {
-	Reset();
-}
+scrollArea.onmouseup = Reset;
 
 /*function ResizeChart(flag, chart) {
 	var lastHeight = cnvsHeight;
@@ -469,12 +598,12 @@ overcanvas.onmousemove = function(event) {
 
 	var count = Math.round((-parseInt(mainCharts.style.left) + event.layerX) / step);
 	for (var i = 0; i < hints.length; i++) {
-		hints[i].firstElementChild.firstElementChild.innerHTML = data[0].columns[i+1][count];
-		points[i].style.bottom = (data[0].columns[i+1][count] * charts[i].height) / (max*1.1) - 7;
+		hints[i].firstElementChild.firstElementChild.innerHTML = data[ThisChart].columns[i+1][count];
+		points[i].style.bottom = (data[ThisChart].columns[i+1][count] * charts[i].height) / (max*1.1) - 7;
 	}
 	pillar.style.left = count * step - 1 + "px";
 
-	var time = new Date(data[0].columns[0][count]);
+	var time = new Date(data[ThisChart].columns[0][count]);
 	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
 }
 
@@ -504,121 +633,38 @@ function ChangeColor(hex, rgba, color, text) {
 	night.firstElementChild.innerHTML = text;
 	pillar.style.background = rgba;
 	mainCharts.style.color = rgba;
+	selection.style.color = color;
+	chooseChart.style.boxShadow = "1px 0 3px 0 " + rgba;
 
 	for (var i = 0; i < dataAnchores.length; i++) {
 		dataAnchores[i].style.color = rgba;
 		dataAnchores[i].style.borderBottom = "1px solid " + rgba;
 	}
 
-
 }
 
 night.onclick = function() {
 	if (day) {
-		ChangeColor("#232F3D", "rgba(255,255,255,.3)", "white", "Day");
+		colors = ["#232F3D", "rgba(255,255,255,.3)", "white", "Day"];
 		day = false;
 	} else {
-		ChangeColor("white", "rgba(0,0,0,.3)", "black", "Night");
+		colors = ["white", "rgba(0,0,0,.3)", "black", "Night"];
 		day = true;
 	}
+	ChangeColor(colors[0], colors[1], colors[2], colors[3]);
 }
 
 
+var show = false;
 
-
-
-
-
-
-
-var keys = [false, false];
-
-document.addEventListener("keydown", function(event) {
-
-	if (event.keyCode == 37) {
-		keys[0] = true;
-	}
-	if (event.keyCode == 39) {
-		keys[1] = true;
-	}
-	if (event.keyCode == 38) {
-		keys[2] = true;
-	}
-	if (event.keyCode == 40) {
-		keys[3] = true;
-	}
-
-});
-
-document.addEventListener("keyup", function(event) {
-
-	if (event.keyCode == 37) {
-		keys[0] = false;
-	}
-	if (event.keyCode == 39) {
-		keys[1] = false;
-	}
-	if (event.keyCode == 38) {
-		keys[2] = false;
-	}
-	if (event.keyCode == 40) {
-		keys[3] = false;
-	}
-});
-
-setInterval(function() {
-	if (window.innerWidth > 600) {
-		min = 600;
+selection.onclick = function() {
+	if (show) {
+		HideEl(chooseChart);
+		chooseChart.style.top = "-10px";
+		show = false;
 	} else {
-		min = window.innerWidth;
+		ShowEl(chooseChart);
+		chooseChart.style.top = "-20px";
+		show = true;
 	}
-
-	if (keys[2]) {
-		console.log("less");
-		if (parseInt(joined.style.width) - 24 > min) {
-			joined.style.width = parseInt(joined.style.width) - 24 + "px";
-			joined.style.height = "400px";
-		} else {
-			joined.style.width = min + "px";
-			joined.style.height = "400px";
-		}
-	}
-
-	if (keys[3]) {
-		console.log("more");
-		if (true) { //parseInt(joined.style.width) + 24 < cnvsWidth) {
-			joined.style.width = parseInt(joined.style.width) + 24 + "px";
-			joined.style.height = "400px";
-		} else {
-			joined.style.width = width + "px";
-			joined.style.height = "400px";
-		}
-	}
-
-
-	if (keys[0]) {
-
-		pointer.style.width = parseInt(pointer.style.width) + 5 + "px";
-
-		console.log("right");
-		/*if (parseInt(joined.style.left) + 24 < 0) {
-			joined.style.left = parseInt(joined.style.left) + 24 + "px";
-		} else {
-			joined.style.left = 0;
-		}*/
-	}
-
-
-	if (keys[1]) {
-
-		pointer.style.width = parseInt(pointer.style.width) - 5 + "px";
-
-		console.log("left");
-		/*if (parseInt(joined.style.left) - 24 > -1 * (parseInt(joined.style.width)) + min) {
-			joined.style.left = parseInt(joined.style.left) - 24 + "px";
-		} else {
-			joined.style.left = -1 * parseInt(joined.style.width) + min + "px";
-		}*/
-	}
-
-}, 50);
+}
