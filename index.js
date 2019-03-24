@@ -216,7 +216,6 @@ function StartGraph() {
 				this.children[0].children[0].children[0].style.height = "23px";
 				points[index].style.opacity = 0;
 				hints[index].style.opacity = 0;
-				//ResizeChart(joinedShow, left);
 				showFlag[index] = false;
 			} else {
 				ShowChart(charts[index]);
@@ -225,7 +224,6 @@ function StartGraph() {
 				this.children[0].children[0].children[0].style.height = 0;
 				points[index].style.opacity = 1;
 				hints[index].style.opacity = 1;
-				//ResizeChart(joinedShow, left);
 				showFlag[index] = true;
 			}
 		}
@@ -297,7 +295,6 @@ setTimeout(function() {
 
 		select.onclick = function() {
 			ThisChart = allKeys[parseInt(this.getAttribute("tab"))];
-			console.log(ThisChart);
 			ClearAll();
 			StartGraph();
 			ChangeColor(colors[0], colors[1], colors[2], colors[3]);
@@ -338,8 +335,8 @@ var scroll = false,
 
 var widthStart,
 	leftGrabber = false,
-	rightGrabber = false;
-
+	rightGrabber = false,
+	touchstarted = true;
 
 function MoveGraph() {
 	var move = -(parseInt(pointer.style.left) * cnvsWidth) / min + "px";
@@ -381,7 +378,7 @@ pointer.onmousedown = function(event) {
 	PointerMoveStart(event);
 }
 pointer.ontouchstart = function(event) {
-	PointerMoveStart(event);
+	scrollArea.style.display = "block";
 }
 
 function PointerMove(event) {
@@ -411,6 +408,22 @@ scrollArea.onmousemove = function(event) {
 }
 scrollArea.ontouchmove = function(event) {
 	event.preventDefault();
+
+	if (!(leftGrabber || rightGrabber) && touchstarted) {
+
+		var X;
+		if (event.clientX === undefined) {
+			X = event.targetTouches[0].clientX;
+		} else {
+			X = event.clientX;
+		}
+
+		scroll = true;
+		touchstarted = false;
+		x_start = X;
+		leftStart = parseInt(pointer.style.left);
+	}
+
 	PointerMove(event);
 }
 
@@ -435,7 +448,7 @@ borderLeft.onmousedown = function(event) {
 	leftGrabber = true;
 }
 borderLeft.ontouchstart = function(event) {
-	PointerResizeStart(event);
+	scrollArea.style.display = "block";
 	leftGrabber = true;
 }
 
@@ -444,7 +457,7 @@ borderRight.onmousedown = function(event) {
 	rightGrabber = true;
 }
 borderRight.ontouchstart = function(event) {
-	PointerResizeStart(event);
+	scrollArea.style.display = "block";
 	rightGrabber = true;
 }
 
@@ -535,8 +548,25 @@ function PointerResize(event) {
 scrollArea.addEventListener("mousemove", function(event){
 	PointerResize(event);
 });
-scrollArea.addEventListener("touchstart", function(event) {
+scrollArea.addEventListener("touchmove", function(event) {
 	event.preventDefault();
+
+	if (touchstarted) {
+		widthStart = parseInt(pointer.style.width);
+
+		var X;
+		if (event.clientX === undefined) {
+			X = event.targetTouches[0].clientX;
+		} else {
+			X = event.clientX;
+		}
+
+		x_start = X;
+		lastX = X;
+		leftStart = parseInt(pointer.style.left);
+		touchstarted = false;
+	}
+
 	PointerResize(event);
 });
 
@@ -553,15 +583,28 @@ scrollArea.onmouseout = Reset;
 scrollArea.ontouchend = function(event) {
 	event.preventDefault();
 	Reset();
+	touchstarted = true;
+}
+scrollArea.ontouchleave = function(event) {
+	event.preventDefault();
+	Reset();
+	touchstarted = true;
 }
 scrollArea.onmouseup = Reset;
 
-overcanvas.onmousemove = function(event) {
+function ShowInfo(event) {
+
+	var X;
+	if (event.layerX === undefined) {
+		X = event.targetTouches[0].clientX;
+	} else {
+		X = event.layerX;
+	}
 
 	pillar.style.opacity = 1;
 	ShowEl(hintBox);
 
-	var count = Math.round((-parseInt(mainCharts.style.left) + event.layerX) / step);
+	var count = Math.round((-parseInt(mainCharts.style.left) + X) / step);
 	for (var i = 0; i < hints.length; i++) {
 		hints[i].firstElementChild.firstElementChild.innerHTML = data[ThisChart].columns[i+1][count];
 		points[i].style.bottom = (data[ThisChart].columns[i+1][count] * charts[i].height) / (max*1.1) - 7;
@@ -570,6 +613,13 @@ overcanvas.onmousemove = function(event) {
 
 	var time = new Date(data[ThisChart].columns[0][count]);
 	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
+}
+
+overcanvas.onmousemove = function(event) {
+	ShowInfo(event);
+}
+overcanvas.ontouchmove = function(event) {
+	ShowInfo(event);
 }
 
 overcanvas.onmouseout = function() {
