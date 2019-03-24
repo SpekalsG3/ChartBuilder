@@ -1,6 +1,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>JS</title>
 	<style type="text/css">
 	.flex {
@@ -26,7 +27,7 @@
 		position: absolute;
 		width: 100%;
 		max-width: 600px;
-		height: 400px;
+		height: 300px;
 	}
 	div#data {
 		width: 100%;
@@ -38,7 +39,6 @@
 		width: 100%;
 		color: rgba(0,0,0,.5);
 		border-bottom: 1px solid rgba(0,0,0,.3);
-		margin: 10px 0;
 	}
 
 	div#timeStamps {
@@ -64,7 +64,7 @@
 
 	div.maincharts {
 		position: relative;
-		height: 400px;
+		height: 300px;
 	}
 	div#main {
 		position: relative;
@@ -166,9 +166,14 @@
 		border-radius: 0 0 0 10px;
 		z-index: 100;
 		transition: .1s;
+		opacity: 0;
+		visibility: hidden;
 	}
 	div.day {
 		text-align: center;
+	}
+	div.datainfo {
+		flex-direction: column;
 	}
 
 	div.sumContainer {
@@ -224,6 +229,8 @@
 		visibility: hidden;
 		position: absolute;
 		top: -10px;
+		z-index: 200;
+		background: white;
 		border-radius: 10px;
 		box-shadow: 0 1px 3px 0 rgba(0,0,0,.5);
 	}
@@ -260,7 +267,7 @@
 
 			<div id="hints">
 				<div class="day"></div>
-				<div></div>
+				<div class="datainfo flex"></div>
 			</div>
 
 		</div>

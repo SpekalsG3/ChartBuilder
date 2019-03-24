@@ -37,11 +37,13 @@ var min,
 	data, xhr,
 	max,
 	step, step_mini,
-	cnvsWidth;
-	//cnvsHeight = 400;
+	cnvsWidth,
+	cnvsHeight = 300;
 
 var ThisChart,
 	timeline;
+
+var direct, lastX;
 
 if (window.innerWidth > 600) {
 	min = 600;
@@ -84,7 +86,6 @@ xhr.send();
 
 function InitCanvasProperties(cnvs, ctxt, wdth, leftGap, fault, start, color, lineWidth) {
 	cnvs.style.left = leftGap;
-	//cnvs.height = cnvsHeight;
 	cnvs.width = wdth;
 	cnvs.style.width = wdth + "px";
 	ctxt.strokeStyle = color;
@@ -109,16 +110,14 @@ function StartGraph() {
 
 		if (i > 0) {
 			var bigCanvas = document.createElement("canvas");
-			bigCanvas.setAttribute("height", 400);
+			bigCanvas.setAttribute("height", cnvsHeight);
 			bigCanvas.setAttribute("width", 24);
-			//bigCanvas.style.top = -(bigCanvas.height * (i-1)) + "px";
 			mainCharts.lastElementChild.appendChild(bigCanvas);
 			charts[i-1] = bigCanvas;
 			ctx_main[i-1] = bigCanvas.getContext("2d");
 
 			var smallKeysCanvas = document.createElement("canvas");
 			smallKeysCanvas.setAttribute("height", 80);
-			//smallKeysCanvas.style.top = -(smallKeysCanvas.height * (i-1)) + "px";
 			miniCharts.lastElementChild.appendChild(smallKeysCanvas);
 			charts_mini[i-1] = smallKeysCanvas;
 			ctx_mini[i-1] = smallKeysCanvas.getContext("2d");
@@ -178,7 +177,6 @@ function StartGraph() {
 	step = charts[0].width * 2.5;
 	cnvsWidth = (data[ThisChart].columns[1].length-1) * step;
 	step_mini = (step * min) / cnvsWidth;
-	//step = cnvsWidth / (data[ThisChart].columns[1].length-1);
 
 	mainCharts.style.width = cnvsWidth + "px";
 	mainCharts.style.height = cnvsHeight + "px";
@@ -196,7 +194,6 @@ function StartGraph() {
 				var timeStamp = document.createElement("div");
 
 				timeStamp.style.width = "120px";
-				//timeStamp.style.width = Math.floor(min / 5) + "px";
 				timeStamp.innerHTML = time.toDateString().substr(4,6);
 
 				timeAnchores.appendChild(timeStamp);
@@ -257,12 +254,12 @@ function StartGraph() {
 }
 
 function ShowEl(el, params = {}) {
-	chooseChart.style.opacity = 1;
-	chooseChart.style.visibility = "visible";
+	el.style.opacity = 1;
+	el.style.visibility = "visible";
 }
 function HideEl(el, params = {}) {
-	chooseChart.style.opacity = 0;
-	chooseChart.style.visibility = "hidden";
+	el.style.opacity = 0;
+	el.style.visibility = "hidden";
 
 }
 
@@ -347,9 +344,6 @@ var widthStart,
 function MoveGraph() {
 	var move = -(parseInt(pointer.style.left) * cnvsWidth) / min + "px";
 	mainCharts.style.left = move;
-	/*for (var i = 0; i < charts.length; i++) {
-		charts[i].style.left = move;
-	}*/
 }
 
 function CheckPointerOut() {
@@ -380,8 +374,6 @@ function PointerMoveStart(event) {
 		scroll = true;
 		x_start = X;
 		leftStart = parseInt(pointer.style.left);
-		lastX = X;
-
 	}
 }
 
@@ -389,7 +381,6 @@ pointer.onmousedown = function(event) {
 	PointerMoveStart(event);
 }
 pointer.ontouchstart = function(event) {
-	console.log(event);
 	PointerMoveStart(event);
 }
 
@@ -435,6 +426,7 @@ function PointerResizeStart(event) {
 	}
 
 	x_start = X;
+	lastX = X;
 	leftStart = parseInt(pointer.style.left);
 }
 
@@ -465,10 +457,6 @@ function ChangeGraphRatio() {
 		charts[i].style.height = cnvsHeight + "px";
 	}
 
-
-	//skip = Math.floor(min / (step * 5));
-	//skip = Math.floor(parseInt(timeline[0].style.width) / step);
-
 	var skip = Math.round(parseInt(timeline[0].style.width) / Math.floor(step));
 	var isRelative = 0;
 
@@ -487,21 +475,18 @@ function ChangeGraphRatio() {
 }
 
 function CheckPointerSize() {
+	sizeFree = true;
+
 	if (parseInt(pointer.style.width) < 60) {
 		pointer.style.width = "60px";
 		sizeFree = false;
-		//console.log("NO");
 	} else if (0 > parseInt(pointer.style.left)) {
 		pointer.style.left = 0;
 		sizeFree = false;
 	} else if (parseInt(pointer.style.width) > min - parseInt(pointer.style.left)) {
 		pointer.style.width = min - parseInt(pointer.style.left) + "px";
 		sizeFree = false;
-	} else {
-		sizeFree = true;
-		//console.log("YES");
 	}
-	//console.log(sizeFree);
 
 	ChangeGraphRatio();
 }
@@ -515,13 +500,15 @@ function PointerResize(event) {
 		X = event.clientX;
 	}
 
-	CheckPointerSize(event, X);
+	CheckPointerSize();
+
+	if (event.clientX > lastX) {
+		direct = "right";
+	} else if (event.clientX < lastX) {
+		direct = "left";
+	}
 
 	if (leftGrabber) {
-
-		/*	Сделать тут проверку с X и lastX, чтобы знать когда обратно идет расширение	*/
-
-		//CheckPointerSizeLeft(event, X);
 
 		scrollArea.style.cursor = "col-resize";
 
@@ -530,11 +517,7 @@ function PointerResize(event) {
 			pointer.style.left = leftStart - x_start + X + "px";
 		}
 
-		//CheckPointerSizeLeft(event, X);
-
 	} else if (rightGrabber) {
-
-		//CheckPointerSizeRight(event, X);
 
 		scrollArea.style.cursor = "col-resize";
 
@@ -542,11 +525,11 @@ function PointerResize(event) {
 			pointer.style.width = widthStart - x_start + X + "px";
 		}
 
-		//CheckPointerSizeRight(event, X);
-
 	}
 
-	CheckPointerSize(event, X);
+	lastX = X;
+
+	CheckPointerSize();
 }
 
 scrollArea.addEventListener("mousemove", function(event){
@@ -573,28 +556,10 @@ scrollArea.ontouchend = function(event) {
 }
 scrollArea.onmouseup = Reset;
 
-/*function ResizeChart(flag, chart) {
-	var lastHeight = cnvsHeight;
-
-	if (flag) {
-		max = Math.max(maxJoined, maxLeft);
-		cnvsHeight = max * Math.min(maxJoined, maxLeft) / parseInt(chart.style.height);
-		chart.style.top = max * 1.1 - cnvsHeight + "px";
-		console.log("hide");
-	} else {
-		max = Math.min(maxJoined, maxLeft);
-		cnvsHeight = max * Math.max(maxJoined, maxLeft) / parseInt(chart.style.height);
-		chart.style.top = -chart.height + "px";
-		console.log("show");
-	}
-
-	chart.style.height = cnvsHeight + "px";
-}*/
-
 overcanvas.onmousemove = function(event) {
-	//console.log(event);
 
 	pillar.style.opacity = 1;
+	ShowEl(hintBox);
 
 	var count = Math.round((-parseInt(mainCharts.style.left) + event.layerX) / step);
 	for (var i = 0; i < hints.length; i++) {
@@ -609,6 +574,7 @@ overcanvas.onmousemove = function(event) {
 
 overcanvas.onmouseout = function() {
 	pillar.style.opacity = 0;
+	HideEl(hintBox);
 }
 
 var day = true;
@@ -635,6 +601,7 @@ function ChangeColor(hex, rgba, color, text) {
 	mainCharts.style.color = rgba;
 	selection.style.color = color;
 	chooseChart.style.boxShadow = "1px 0 3px 0 " + rgba;
+	chooseChart.style.background = hex;
 
 	for (var i = 0; i < dataAnchores.length; i++) {
 		dataAnchores[i].style.color = rgba;
