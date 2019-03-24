@@ -37,8 +37,8 @@ var min,
 	data, xhr,
 	max,
 	step, step_mini,
-	cnvsWidth,
-	cnvsHeight = 400;
+	cnvsWidth;
+	//cnvsHeight = 400;
 
 var ThisChart,
 	timeline;
