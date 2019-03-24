@@ -52,23 +52,6 @@ if (window.innerWidth > 600) {
 	min = window.innerWidth;
 }
 
-window.onresize = function() {
-	if (window.innerWidth > 600) {
-		min = 600;
-	} else {
-		min = window.innerWidth;
-	}
-
-	pointer.style.left = min - parseInt(pointer.style.width); + "px";
-
-	for (var i = 0; i < charts_mini.length; i++) {
-		charts_mini[i].style.width = min + "px";
-		charts_mini[i].style.height = 80 + "px";
-	}
-
-	ChangeGraphRatio();
-}
-
 function GetJsonAJAX() {
 	if (window.XMLHttpRequest) {
 		xhr = new XMLHttpRequest();
@@ -86,15 +69,6 @@ function GetJsonAJAX() {
 	xhr.responseType = "json";
 	xhr.send();
 }
-
-var checkJson = setInterval(function() {
-	if (data === undefined) {
-		GetJsonAJAX();
-	} else {
-		clearInterval(checkJson);
-		Prepare();
-	}
-}, 10);
 
 function InitCanvasProperties(cnvs, ctxt, wdth, leftGap, fault, start, color, lineWidth) {
 	cnvs.style.left = leftGap;
@@ -125,160 +99,6 @@ function LocalMax(chrt, from, to) {
 	return local;
 }
 
-function StartGraph() {
-	blocker.style.display = "block";
-
-	for (var i = 0; i < data[ThisChart].columns.length; i++) {
-
-		if (i > 0) {
-			var bigCanvas = document.createElement("canvas");
-			bigCanvas.setAttribute("height", cnvsHeight);
-			bigCanvas.setAttribute("width", 24);
-			bigCanvas.style.opacity = 1;
-			mainCharts.lastElementChild.appendChild(bigCanvas);
-			charts[i-1] = bigCanvas;
-			ctx_main[i-1] = bigCanvas.getContext("2d");
-
-			var smallCanvas = document.createElement("canvas");
-			smallCanvas.setAttribute("height", 80);
-			smallCanvas.style.opacity = 1;
-			miniCharts.lastElementChild.appendChild(smallCanvas);
-			charts_mini[i-1] = smallCanvas;
-			ctx_mini[i-1] = smallCanvas.getContext("2d");
-
-			var btn = document.createElement("div");
-			btn.className = "switchers";
-			var swtch = document.createElement("div");
-			swtch.classList.add("swtchbtn", "flex");
-			var led = document.createElement("div");
-			led.classList.add("led", "flex");
-			led.style.background = data[ThisChart].colors["y"+(i-1)];
-			var name = document.createElement("span");
-			name.innerHTML = data[ThisChart].names["y"+(i-1)];
-			led.appendChild(document.createElement("div"));
-			swtch.appendChild(led);
-			swtch.appendChild(name);
-			btn.appendChild(swtch);
-			btn.setAttribute("index", i-1);
-			switchers[i-1] = btn;
-			showFlag[i-1] = true;
-			buttons.appendChild(btn);
-
-			var hint = document.createElement("div");
-			hint.className = "sumContainer";
-			var text = document.createElement("div");
-			text.className = "flex";
-			text.style.color = data[ThisChart].colors["y"+(i-1)];
-			text.style.flexDirection = "column";
-			var num = document.createElement("span");
-			num.style.fontSize = "20px";
-			num.innerHTML = data[ThisChart].columns[i][data[ThisChart].columns[i].length-1];
-			text.appendChild(num);
-			text.innerHTML += data[ThisChart].names["y"+(i-1)];
-			hint.appendChild(text);
-			hintBox.lastElementChild.appendChild(hint);
-			hints[i-1] = hint;
-
-			var point = document.createElement("div");
-			point.className = "point";
-			point.style.border = "3px solid " + data[ThisChart].colors["y"+(i-1)];
-			pillar.appendChild(point);
-			points[i-1] = point;
-		}
-	}
-
-	/*for (var i = 1; i < data[ThisChart].columns.length; i++) {
-		if (charts[i-1].style.opacity == 1) {
-			max = Math.min(max, Math.max.apply(null, data[ThisChart].columns[i]));
-		}
-	}*/
-	max = LocalMax(ThisChart, 0, data[ThisChart].columns[0].length);
-
-	var time = new Date(data[ThisChart].columns[0][data[ThisChart].columns[0].length-1]);
-	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
-
-	for (var i = 0; i < dataAnchores.length; i++) {
-		dataAnchores[i].innerHTML = Math.floor((max / (dataAnchores.length-1)) * (i));
-	}
-
-	step = charts[0].width * 2.5;
-	cnvsWidth = (data[ThisChart].columns[1].length-1) * step;
-	step_mini = (step * min) / cnvsWidth;
-
-	mainCharts.style.width = cnvsWidth + "px";
-	mainCharts.style.height = cnvsHeight + "px";
-
-	for (var j = 0; j < charts.length; j++) {
-		InitCanvasProperties(charts[j], ctx_main[j], cnvsWidth, 0, 10, data[ThisChart].columns[j+1][0], data[ThisChart].colors["y"+j], 6);
-		InitCanvasProperties(charts_mini[j], ctx_mini[j], min, 0, 5, data[ThisChart].columns[j+1][0], data[ThisChart].colors["y"+j], 2);
-	}
-
-	for (var j = 0; j < charts.length; j++) {
-		for (var i = 1; i < data[ThisChart].columns[0].length+1; i++) {
-
-			if (j == 0) {
-				var time = new Date(data[ThisChart].columns[0][i-1]);
-				var timeStamp = document.createElement("div");
-
-				timeStamp.style.width = "120px";
-				timeStamp.innerHTML = time.toDateString().substr(4,6);
-
-				timeAnchores.appendChild(timeStamp);
-			}
-
-			DrawBigChart(charts[j], ctx_main[j], j+1, i);
-			DrawMiniChart(charts_mini[j], ctx_mini[j], j+1, i);
-
-		}
-	}
-
-	for (var i = 0; i < switchers.length; i++) {
-		switchers[i].onclick = function(event) {
-			var index = parseInt(this.getAttribute("index"));
-
-			if (showFlag[index]) {
-				HideChart(charts[index]);
-				HideChart(charts_mini[index]);
-				this.children[0].children[0].children[0].style.width = "23px";
-				this.children[0].children[0].children[0].style.height = "23px";
-				points[index].style.opacity = 0;
-				hints[index].style.opacity = 0;
-				showFlag[index] = false;
-			} else {
-				ShowChart(charts[index]);
-				ShowChart(charts_mini[index]);
-				this.children[0].children[0].children[0].style.width = 0;
-				this.children[0].children[0].children[0].style.height = 0;
-				points[index].style.opacity = 1;
-				hints[index].style.opacity = 1;
-				showFlag[index] = true;
-			}
-
-		}
-	}
-
-	timeline = timeAnchores.children;
-
-	for (var i = 0; i < ctx_main.length; i++) {
-		ctx_main[i].stroke();
-		ctx_mini[i].stroke();
-	}
-
-	cnvsWidth /= 2.5;
-
-	pointer.style.display = "block";
-	if ((min * min) / cnvsWidth > 60) {
-		pointer.style.width = (min * min) / cnvsWidth + "px";
-	} else {
-		pointer.style.width = "60px";
-	}
-	pointer.style.left = min - parseInt(pointer.style.width); + "px";
-
-	ChangeGraphRatio();
-
-	blocker.style.display = "none";
-}
-
 function ShowEl(el, params = {}) {
 	el.style.opacity = 1;
 	el.style.visibility = "visible";
@@ -307,49 +127,6 @@ function ClearAll() {
 	hints = [];
 	points = [];
 }
-
-
-function Prepare() {
-
-	var i = 0;
-	for (var key of data.keys()) {
-
-		if (i == 0) {
-			ThisChart = key;
-		}
-		var select = document.createElement("div");
-		select.innerHTML = key;
-		select.setAttribute("tab", i);
-
-		select.onclick = function() {
-			var newThisChart = allKeys[parseInt(this.getAttribute("tab"))];
-			if (ThisChart == newThisChart) {
-				return;
-			}
-			ThisChart = newThisChart;
-			ClearAll();
-			StartGraph();
-			ChangeColor(colors[0], colors[1], colors[2], colors[3]);
-		}
-
-		chooseChart.appendChild(select);
-		allKeys[i] = key;
-
-		i++;
-	}
-
-	for (var j = 0; j < data.length; j++) {
-		for (var i = 0; i < data[j].columns.length; i++) {
-			data[j].columns[i].shift();
-		}
-	}
-
-	StartGraph();
-
-	blocker.style.display = "none";
-
-}
-
 
 function ShowChart(chart) {
 	chart.style.opacity = 1;
@@ -590,6 +367,222 @@ function Reset() {
 	sizeFree = true;
 	scrollArea.style.display = "none";
 }
+
+function StartGraph() {
+	blocker.style.display = "block";
+
+	for (var i = 0; i < data[ThisChart].columns.length; i++) {
+
+		if (i > 0) {
+			var bigCanvas = document.createElement("canvas");
+			bigCanvas.setAttribute("height", cnvsHeight);
+			bigCanvas.setAttribute("width", 24);
+			bigCanvas.style.opacity = 1;
+			mainCharts.lastElementChild.appendChild(bigCanvas);
+			charts[i-1] = bigCanvas;
+			ctx_main[i-1] = bigCanvas.getContext("2d");
+
+			var smallCanvas = document.createElement("canvas");
+			smallCanvas.setAttribute("height", 80);
+			smallCanvas.style.opacity = 1;
+			miniCharts.lastElementChild.appendChild(smallCanvas);
+			charts_mini[i-1] = smallCanvas;
+			ctx_mini[i-1] = smallCanvas.getContext("2d");
+
+			var btn = document.createElement("div");
+			btn.className = "switchers";
+			var swtch = document.createElement("div");
+			swtch.classList.add("swtchbtn", "flex");
+			var led = document.createElement("div");
+			led.classList.add("led", "flex");
+			led.style.background = data[ThisChart].colors["y"+(i-1)];
+			var name = document.createElement("span");
+			name.innerHTML = data[ThisChart].names["y"+(i-1)];
+			led.appendChild(document.createElement("div"));
+			swtch.appendChild(led);
+			swtch.appendChild(name);
+			btn.appendChild(swtch);
+			btn.setAttribute("index", i-1);
+			switchers[i-1] = btn;
+			showFlag[i-1] = true;
+			buttons.appendChild(btn);
+
+			var hint = document.createElement("div");
+			hint.className = "sumContainer";
+			var text = document.createElement("div");
+			text.className = "flex";
+			text.style.color = data[ThisChart].colors["y"+(i-1)];
+			text.style.flexDirection = "column";
+			var num = document.createElement("span");
+			num.style.fontSize = "20px";
+			num.innerHTML = data[ThisChart].columns[i][data[ThisChart].columns[i].length-1];
+			text.appendChild(num);
+			text.innerHTML += data[ThisChart].names["y"+(i-1)];
+			hint.appendChild(text);
+			hintBox.lastElementChild.appendChild(hint);
+			hints[i-1] = hint;
+
+			var point = document.createElement("div");
+			point.className = "point";
+			point.style.border = "3px solid " + data[ThisChart].colors["y"+(i-1)];
+			pillar.appendChild(point);
+			points[i-1] = point;
+		}
+	}
+
+	max = LocalMax(ThisChart, 0, data[ThisChart].columns[0].length);
+
+	var time = new Date(data[ThisChart].columns[0][data[ThisChart].columns[0].length-1]);
+	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
+
+	for (var i = 0; i < dataAnchores.length; i++) {
+		dataAnchores[i].innerHTML = Math.floor((max / (dataAnchores.length-1)) * (i));
+	}
+
+	step = charts[0].width * 2.5;
+	cnvsWidth = (data[ThisChart].columns[1].length-1) * step;
+	step_mini = (step * min) / cnvsWidth;
+
+	mainCharts.style.width = cnvsWidth + "px";
+	mainCharts.style.height = cnvsHeight + "px";
+
+	for (var j = 0; j < charts.length; j++) {
+		InitCanvasProperties(charts[j], ctx_main[j], cnvsWidth, 0, 10, data[ThisChart].columns[j+1][0], data[ThisChart].colors["y"+j], 6);
+		InitCanvasProperties(charts_mini[j], ctx_mini[j], min, 0, 5, data[ThisChart].columns[j+1][0], data[ThisChart].colors["y"+j], 2);
+	}
+
+	for (var j = 0; j < charts.length; j++) {
+		for (var i = 1; i < data[ThisChart].columns[0].length+1; i++) {
+
+			if (j == 0) {
+				var time = new Date(data[ThisChart].columns[0][i-1]);
+				var timeStamp = document.createElement("div");
+
+				timeStamp.style.width = "120px";
+				timeStamp.innerHTML = time.toDateString().substr(4,6);
+
+				timeAnchores.appendChild(timeStamp);
+			}
+
+			DrawBigChart(charts[j], ctx_main[j], j+1, i);
+			DrawMiniChart(charts_mini[j], ctx_mini[j], j+1, i);
+
+		}
+	}
+
+	for (var i = 0; i < switchers.length; i++) {
+		switchers[i].onclick = function(event) {
+			var index = parseInt(this.getAttribute("index"));
+
+			if (showFlag[index]) {
+				HideChart(charts[index]);
+				HideChart(charts_mini[index]);
+				this.children[0].children[0].children[0].style.width = "23px";
+				this.children[0].children[0].children[0].style.height = "23px";
+				points[index].style.opacity = 0;
+				hints[index].style.opacity = 0;
+				showFlag[index] = false;
+			} else {
+				ShowChart(charts[index]);
+				ShowChart(charts_mini[index]);
+				this.children[0].children[0].children[0].style.width = 0;
+				this.children[0].children[0].children[0].style.height = 0;
+				points[index].style.opacity = 1;
+				hints[index].style.opacity = 1;
+				showFlag[index] = true;
+			}
+
+		}
+	}
+
+	timeline = timeAnchores.children;
+
+	for (var i = 0; i < ctx_main.length; i++) {
+		ctx_main[i].stroke();
+		ctx_mini[i].stroke();
+	}
+
+	cnvsWidth /= 2.5;
+
+	pointer.style.display = "block";
+	if ((min * min) / cnvsWidth > 60) {
+		pointer.style.width = (min * min) / cnvsWidth + "px";
+	} else {
+		pointer.style.width = "60px";
+	}
+	pointer.style.left = min - parseInt(pointer.style.width); + "px";
+
+	ChangeGraphRatio();
+
+	blocker.style.display = "none";
+}
+
+function Prepare() {
+
+	var i = 0;
+	for (var key of data.keys()) {
+
+		if (i == 0) {
+			ThisChart = key;
+		}
+		var select = document.createElement("div");
+		select.innerHTML = key;
+		select.setAttribute("tab", i);
+
+		select.onclick = function() {
+			var newThisChart = allKeys[parseInt(this.getAttribute("tab"))];
+			if (ThisChart == newThisChart) {
+				return;
+			}
+			ThisChart = newThisChart;
+			ClearAll();
+			StartGraph();
+			ChangeColor(colors[0], colors[1], colors[2], colors[3]);
+		}
+
+		chooseChart.appendChild(select);
+		allKeys[i] = key;
+
+		i++;
+	}
+
+	for (var j = 0; j < data.length; j++) {
+		for (var i = 0; i < data[j].columns.length; i++) {
+			data[j].columns[i].shift();
+		}
+	}
+
+	StartGraph();
+
+	blocker.style.display = "none";
+
+}
+
+window.onresize = function() {
+	if (window.innerWidth > 600) {
+		min = 600;
+	} else {
+		min = window.innerWidth;
+	}
+
+	pointer.style.left = min - parseInt(pointer.style.width); + "px";
+
+	for (var i = 0; i < charts_mini.length; i++) {
+		charts_mini[i].style.width = min + "px";
+		charts_mini[i].style.height = 80 + "px";
+	}
+
+	ChangeGraphRatio();
+}
+
+var checkJson = setInterval(function() {
+	if (data == undefined) {
+		GetJsonAJAX();
+	} else {
+		clearInterval(checkJson);
+		Prepare();
+	}
+}, 100);
 
 pointer.onmousedown = function(event) {
 	PointerMoveStart(event);

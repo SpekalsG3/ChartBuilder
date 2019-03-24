@@ -14,7 +14,7 @@ div#box {
 	max-width: 600px;
 	height: 100%;
 	max-height: 800px;
-	/*overflow: hidden;*/
+	overflow: hidden;
 }
 
 div.axes {
@@ -194,7 +194,6 @@ div.point {
 	border-radius: 50%;
 	transition: .1s ease-out;
 	z-index: 99;
-	/*border: 2px solid green;*/
 }
 div#overcanvas {
 	position: absolute;
