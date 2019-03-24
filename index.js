@@ -378,6 +378,7 @@ pointer.onmousedown = function(event) {
 	PointerMoveStart(event);
 }
 pointer.ontouchstart = function(event) {
+	HideEl(pillar);
 	scrollArea.style.display = "block";
 }
 
@@ -448,6 +449,7 @@ borderLeft.onmousedown = function(event) {
 	leftGrabber = true;
 }
 borderLeft.ontouchstart = function(event) {
+	HideEl(pillar);
 	scrollArea.style.display = "block";
 	leftGrabber = true;
 }
@@ -457,6 +459,7 @@ borderRight.onmousedown = function(event) {
 	rightGrabber = true;
 }
 borderRight.ontouchstart = function(event) {
+	HideEl(pillar);
 	scrollArea.style.display = "block";
 	rightGrabber = true;
 }
@@ -601,7 +604,7 @@ function ShowInfo(event) {
 		X = event.layerX;
 	}
 
-	pillar.style.opacity = 1;
+	ShowEl(pillar);
 	ShowEl(hintBox);
 
 	var count = Math.round((-parseInt(mainCharts.style.left) + X) / step);
@@ -623,7 +626,7 @@ overcanvas.ontouchmove = function(event) {
 }
 
 overcanvas.onmouseout = function() {
-	pillar.style.opacity = 0;
+	HideEl(pillar);
 	HideEl(hintBox);
 }
 

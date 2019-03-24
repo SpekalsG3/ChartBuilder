@@ -1,0 +1,243 @@
+.flex {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+body {
+	height: 100vh;
+	margin: 0;
+	transition: .1s;
+}
+div#box {
+	position: relative;
+	width: 100%;
+	max-width: 600px;
+	height: 100%;
+	max-height: 800px;
+	overflow: hidden;
+}
+
+div.axes {
+	position: absolute;
+	width: 100%;
+	max-width: 600px;
+	height: 300px;
+}
+div#data {
+	width: 100%;
+	height: 100%;
+	flex-direction: column-reverse;
+	justify-content: space-between;
+}
+div#data div {
+	width: 100%;
+	color: rgba(0,0,0,.5);
+	border-bottom: 1px solid rgba(0,0,0,.3);
+}
+
+div#timeStamps {
+	width: 100%;
+	position: absolute;
+	height: 20px;
+	bottom: -20px;
+	white-space: nowrap;
+}
+div#timeStamps div {
+	position: relative;
+	width: 60px;
+	transition: .1s;
+	display: inline-block;
+	text-align: center;
+}
+
+div.graph {
+	position: relative;
+	width: 100%;
+	z-index: 99;
+}
+
+div.maincharts {
+	position: relative;
+	height: 300px;
+}
+div#main {
+	position: relative;
+	transition: .1s ease-out;
+	color: rgba(0,0,0,.3);
+}
+
+div#scroll {
+	position: relative;
+	margin-top: 30px;
+	height: 80px;
+}
+
+div#scrollArea {
+	display: none;
+	position: absolute;
+	width: 100%;
+	height: 80px;
+	z-index: 100;
+}
+
+div.graph canvas {
+	position: absolute;
+	transition: .1s ease-out;
+	left: 0;
+}
+
+div#pointer {
+	position: absolute;
+	height: 78px;
+	border-top: 1px solid rgba(0,0,0,.3);
+	border-bottom: 1px solid rgba(0,0,0,.3);
+	border-radius: 4px;
+	display: none;
+	cursor: grab;
+	z-index: 99;
+}
+div.border {
+	position: relative;
+	display: inline-block;
+	width: 10px;
+	height: 78px;
+	border-radius: 50px;
+	background: rgba(0,0,0,.3);
+	cursor: col-resize;
+}
+div#left_border {
+	left: -1px;
+}
+div#right_border {
+	left: calc(100% - 23px);
+}
+
+div#buttons {
+	position: relative;
+	margin-top: 2%;
+}
+div.switchers {
+	display: inline-block;
+	position: relative;
+	border-radius: 50px;
+	border: 1px solid rgba(0,0,0,.3);
+	padding: 3px 10px 3px 5px;
+	cursor: pointer;
+}
+div.led {
+	position: relative;
+	width: 25px;
+	height: 25px;
+	border-radius: 50%;
+}
+div.led:before {
+	position: absolute;
+	content: "";
+	width: 5px;
+	height: 12px;
+	transform: rotateZ(45deg);
+	border-right: 2px solid white;
+	border-bottom: 2px solid white;
+}
+div.led div {
+	position: absolute;
+	height: 0;
+	width: 0;
+	background: white;
+	border-radius: 50%;
+	transition: .2s;
+}
+div.switchers span {
+	margin-left: 10px;
+}
+
+div#hints {
+	position: absolute;
+	top: 0;
+	right: 0;
+	background: white;
+	padding: 10px;
+	border-radius: 0 0 0 10px;
+	z-index: 100;
+	transition: .1s;
+	opacity: 0;
+	visibility: hidden;
+}
+div.day {
+	text-align: center;
+}
+div.datainfo {
+	flex-direction: column;
+}
+
+div.sumContainer {
+	margin: 0 10px;
+	display: inline-block;
+	transition: .1s;
+}
+
+div#pillar {
+	position: absolute;
+	width: 2px;
+	height: 100%;
+	background: rgba(0,0,0,.3);
+	transition: .1s ease-out;
+	opacity: 0;
+}
+div.point {
+	position: absolute;
+	width: 8px;
+	height: 8px;
+	left: -6px;
+	background: white;
+	border-radius: 50%;
+	transition: .1s ease-out;
+	z-index: 99;
+	/*border: 2px solid green;*/
+}
+div#overcanvas {
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	z-index: 100;
+}
+
+div.options {
+	position: absolute;
+	width: 100%;
+	bottom: 5%;
+}
+div.options div.flex {
+	cursor: pointer;
+	height: 50px;
+	text-align: center;
+}
+div#nightmode span {
+	margin: 0 5px;
+}
+
+div.selection {
+	transition: .1s ease-out;
+	opacity: 1;
+	visibility: hidden;
+	position: absolute;
+	top: -10px;
+	z-index: 200;
+	background: white;
+	border-radius: 10px;
+	box-shadow: 0 1px 3px 0 rgba(0,0,0,.5);
+}
+div.selection div {
+	display: inline-block;
+	width: 1.5em;
+	margin: 5px 0;
+}
+
+div#blocker {
+	background: white;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	z-index: 200;
+	display: block;
+}
