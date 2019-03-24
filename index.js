@@ -582,7 +582,7 @@ var checkJson = setInterval(function() {
 		clearInterval(checkJson);
 		Prepare();
 	}
-}, 10);
+}, 100);
 
 pointer.onmousedown = function(event) {
 	PointerMoveStart(event);
