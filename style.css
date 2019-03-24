@@ -14,7 +14,7 @@ div#box {
 	max-width: 600px;
 	height: 100%;
 	max-height: 800px;
-	overflow: hidden;
+	/*overflow: hidden;*/
 }
 
 div.axes {
@@ -84,6 +84,7 @@ div.graph canvas {
 	position: absolute;
 	transition: .1s ease-out;
 	left: 0;
+	opacity: 1;
 }
 
 div#pointer {

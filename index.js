@@ -35,10 +35,11 @@ var charts = [],
 
 var min,
 	data, xhr,
-	max,
+	max = 0,
 	step, step_mini,
 	cnvsWidth,
-	cnvsHeight = 300;
+	cnvsHeight = 300,
+	newHeight = cnvsHeight;
 
 var ThisChart,
 	timeline;
@@ -68,21 +69,32 @@ window.onresize = function() {
 	ChangeGraphRatio();
 }
 
-if (window.XMLHttpRequest) {
-	xhr = new XMLHttpRequest();
-} else {
-	xhr = new ActiveXObject("Microsoft.XMLHTTP");
-}
-
-xhr.onreadystatechange = function() {
-	if (xhr.status == 200 && xhr.readyState == 4) {
-		data = xhr.response;
+function GetJsonAJAX() {
+	if (window.XMLHttpRequest) {
+		xhr = new XMLHttpRequest();
+	} else {
+		xhr = new ActiveXObject("Microsoft.XMLHTTP");
 	}
+
+	xhr.onreadystatechange = function() {
+		if (xhr.status == 200 && xhr.readyState == 4) {
+			data = xhr.response;
+		}
+	}
+
+	xhr.open("GET", "chart_data.json");
+	xhr.responseType = "json";
+	xhr.send();
 }
 
-xhr.open("GET", "chart_data.json");
-xhr.responseType = "json";
-xhr.send();
+var checkJson = setInterval(function() {
+	if (data === undefined) {
+		GetJsonAJAX();
+	} else {
+		clearInterval(checkJson);
+		Prepare();
+	}
+}, 10);
 
 function InitCanvasProperties(cnvs, ctxt, wdth, leftGap, fault, start, color, lineWidth) {
 	cnvs.style.left = leftGap;
@@ -103,6 +115,16 @@ function DrawMiniChart(cnvs, ctxt, clmn, iter) {
 					(data[ThisChart].columns[clmn][iter] * cnvs.height) / (max*1.1));
 }
 
+function LocalMax(chrt, from, to) {
+	var local = 0;
+	for (var i = 1; i < data[ThisChart].columns.length; i++) {
+		if (charts[i-1].style.opacity == 1) {
+			local = Math.max(local, Math.max.apply(null, data[ThisChart].columns[i].slice(from, to)));
+		}
+	}
+	return local;
+}
+
 function StartGraph() {
 	blocker.style.display = "block";
 
@@ -112,15 +134,17 @@ function StartGraph() {
 			var bigCanvas = document.createElement("canvas");
 			bigCanvas.setAttribute("height", cnvsHeight);
 			bigCanvas.setAttribute("width", 24);
+			bigCanvas.style.opacity = 1;
 			mainCharts.lastElementChild.appendChild(bigCanvas);
 			charts[i-1] = bigCanvas;
 			ctx_main[i-1] = bigCanvas.getContext("2d");
 
-			var smallKeysCanvas = document.createElement("canvas");
-			smallKeysCanvas.setAttribute("height", 80);
-			miniCharts.lastElementChild.appendChild(smallKeysCanvas);
-			charts_mini[i-1] = smallKeysCanvas;
-			ctx_mini[i-1] = smallKeysCanvas.getContext("2d");
+			var smallCanvas = document.createElement("canvas");
+			smallCanvas.setAttribute("height", 80);
+			smallCanvas.style.opacity = 1;
+			miniCharts.lastElementChild.appendChild(smallCanvas);
+			charts_mini[i-1] = smallCanvas;
+			ctx_mini[i-1] = smallCanvas.getContext("2d");
 
 			var btn = document.createElement("div");
 			btn.className = "switchers";
@@ -163,9 +187,12 @@ function StartGraph() {
 		}
 	}
 
-	maxJoined = Math.max.apply(null, data[ThisChart].columns[1]);
-	maxLeft = Math.max.apply(null, data[ThisChart].columns[2]);
-	max = Math.max(maxJoined, maxLeft);
+	/*for (var i = 1; i < data[ThisChart].columns.length; i++) {
+		if (charts[i-1].style.opacity == 1) {
+			max = Math.min(max, Math.max.apply(null, data[ThisChart].columns[i]));
+		}
+	}*/
+	max = LocalMax(ThisChart, 0, data[ThisChart].columns[0].length);
 
 	var time = new Date(data[ThisChart].columns[0][data[ThisChart].columns[0].length-1]);
 	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
@@ -226,6 +253,7 @@ function StartGraph() {
 				hints[index].style.opacity = 1;
 				showFlag[index] = true;
 			}
+
 		}
 	}
 
@@ -281,7 +309,7 @@ function ClearAll() {
 }
 
 
-setTimeout(function() {
+function Prepare() {
 
 	var i = 0;
 	for (var key of data.keys()) {
@@ -294,7 +322,11 @@ setTimeout(function() {
 		select.setAttribute("tab", i);
 
 		select.onclick = function() {
-			ThisChart = allKeys[parseInt(this.getAttribute("tab"))];
+			var newThisChart = allKeys[parseInt(this.getAttribute("tab"))];
+			if (ThisChart == newThisChart) {
+				return;
+			}
+			ThisChart = newThisChart;
 			ClearAll();
 			StartGraph();
 			ChangeColor(colors[0], colors[1], colors[2], colors[3]);
@@ -316,7 +348,7 @@ setTimeout(function() {
 
 	blocker.style.display = "none";
 
-}, 700);
+}
 
 
 function ShowChart(chart) {
@@ -339,8 +371,8 @@ var widthStart,
 	touchstarted = true;
 
 function MoveGraph() {
-	var move = -(parseInt(pointer.style.left) * cnvsWidth) / min + "px";
-	mainCharts.style.left = move;
+	var move = -(parseInt(pointer.style.left) * cnvsWidth) / min;
+	mainCharts.style.left = move + "px";
 }
 
 function CheckPointerOut() {
@@ -374,14 +406,6 @@ function PointerMoveStart(event) {
 	}
 }
 
-pointer.onmousedown = function(event) {
-	PointerMoveStart(event);
-}
-pointer.ontouchstart = function(event) {
-	HideEl(pillar);
-	scrollArea.style.display = "block";
-}
-
 function PointerMove(event) {
 
 	if (scroll) {
@@ -404,30 +428,6 @@ function PointerMove(event) {
 	}
 }
 
-scrollArea.onmousemove = function(event) {
-	PointerMove(event);
-}
-scrollArea.ontouchmove = function(event) {
-	event.preventDefault();
-
-	if (!(leftGrabber || rightGrabber) && touchstarted) {
-
-		var X;
-		if (event.clientX === undefined) {
-			X = event.targetTouches[0].clientX;
-		} else {
-			X = event.clientX;
-		}
-
-		scroll = true;
-		touchstarted = false;
-		x_start = X;
-		leftStart = parseInt(pointer.style.left);
-	}
-
-	PointerMove(event);
-}
-
 function PointerResizeStart(event) {
 	widthStart = parseInt(pointer.style.width);
 	scrollArea.style.display = "block";
@@ -444,33 +444,14 @@ function PointerResizeStart(event) {
 	leftStart = parseInt(pointer.style.left);
 }
 
-borderLeft.onmousedown = function(event) {
-	PointerResizeStart(event);
-	leftGrabber = true;
-}
-borderLeft.ontouchstart = function(event) {
-	HideEl(pillar);
-	scrollArea.style.display = "block";
-	leftGrabber = true;
-}
-
-borderRight.onmousedown = function(event) {
-	PointerResizeStart(event);
-	rightGrabber = true;
-}
-borderRight.ontouchstart = function(event) {
-	HideEl(pillar);
-	scrollArea.style.display = "block";
-	rightGrabber = true;
-}
-
 function ChangeGraphRatio() {
+
 	cnvsWidth = (min * min) / parseInt(pointer.style.width);
 	step = cnvsWidth / (data[ThisChart].columns[1].length-1);
 	mainCharts.style.width = cnvsWidth + "px";
 	for (var i = 0; i < charts.length; i++) {
 		charts[i].style.width = cnvsWidth + "px";
-		charts[i].style.height = cnvsHeight + "px";
+		charts[i].style.height = newHeight + "px";
 	}
 
 	var skip = Math.round(parseInt(timeline[0].style.width) / Math.floor(step));
@@ -548,53 +529,6 @@ function PointerResize(event) {
 	CheckPointerSize();
 }
 
-scrollArea.addEventListener("mousemove", function(event){
-	PointerResize(event);
-});
-scrollArea.addEventListener("touchmove", function(event) {
-	event.preventDefault();
-
-	if (touchstarted) {
-		widthStart = parseInt(pointer.style.width);
-
-		var X;
-		if (event.clientX === undefined) {
-			X = event.targetTouches[0].clientX;
-		} else {
-			X = event.clientX;
-		}
-
-		x_start = X;
-		lastX = X;
-		leftStart = parseInt(pointer.style.left);
-		touchstarted = false;
-	}
-
-	PointerResize(event);
-});
-
-function Reset() {
-	scroll = false;
-	leftGrabber = false;
-	rightGrabber = false;
-	moveFree = true;
-	sizeFree = true;
-	scrollArea.style.display = "none";
-}
-
-scrollArea.onmouseout = Reset;
-scrollArea.ontouchend = function(event) {
-	event.preventDefault();
-	Reset();
-	touchstarted = true;
-}
-scrollArea.ontouchleave = function(event) {
-	event.preventDefault();
-	Reset();
-	touchstarted = true;
-}
-scrollArea.onmouseup = Reset;
-
 function ShowInfo(event) {
 
 	var X;
@@ -610,27 +544,13 @@ function ShowInfo(event) {
 	var count = Math.round((-parseInt(mainCharts.style.left) + X) / step);
 	for (var i = 0; i < hints.length; i++) {
 		hints[i].firstElementChild.firstElementChild.innerHTML = data[ThisChart].columns[i+1][count];
-		points[i].style.bottom = (data[ThisChart].columns[i+1][count] * charts[i].height) / (max*1.1) - 7;
+		points[i].style.bottom = (data[ThisChart].columns[i+1][count] * newHeight) / (max*1.1) + 2;
 	}
 	pillar.style.left = count * step - 1 + "px";
 
 	var time = new Date(data[ThisChart].columns[0][count]);
 	hintBox.firstElementChild.innerHTML = time.toDateString().substr(0,10).replace(" ", ", ");
 }
-
-overcanvas.onmousemove = function(event) {
-	ShowInfo(event);
-}
-overcanvas.ontouchmove = function(event) {
-	ShowInfo(event);
-}
-
-overcanvas.onmouseout = function() {
-	HideEl(pillar);
-	HideEl(hintBox);
-}
-
-var day = true;
 
 function ChangeColor(hex, rgba, color, text) {
 	document.body.style.background = hex;
@@ -660,8 +580,122 @@ function ChangeColor(hex, rgba, color, text) {
 		dataAnchores[i].style.color = rgba;
 		dataAnchores[i].style.borderBottom = "1px solid " + rgba;
 	}
-
 }
+
+function Reset() {
+	scroll = false;
+	leftGrabber = false;
+	rightGrabber = false;
+	moveFree = true;
+	sizeFree = true;
+	scrollArea.style.display = "none";
+}
+
+pointer.onmousedown = function(event) {
+	PointerMoveStart(event);
+}
+
+pointer.ontouchstart = function(event) {
+	HideEl(pillar);
+	scrollArea.style.display = "block";
+}
+
+scrollArea.onmousemove = function(event) {
+	PointerMove(event);
+}
+
+scrollArea.ontouchmove = function(event) {
+	event.preventDefault();
+
+	if (!(leftGrabber || rightGrabber) && touchstarted) {
+
+		var X;
+		if (event.clientX === undefined) {
+			X = event.targetTouches[0].clientX;
+		} else {
+			X = event.clientX;
+		}
+
+		scroll = true;
+		touchstarted = false;
+		x_start = X;
+		leftStart = parseInt(pointer.style.left);
+	}
+
+	PointerMove(event);
+}
+
+borderLeft.onmousedown = function(event) {
+	PointerResizeStart(event);
+	leftGrabber = true;
+}
+borderLeft.ontouchstart = function(event) {
+	HideEl(pillar);
+	scrollArea.style.display = "block";
+	leftGrabber = true;
+}
+
+borderRight.onmousedown = function(event) {
+	PointerResizeStart(event);
+	rightGrabber = true;
+}
+borderRight.ontouchstart = function(event) {
+	HideEl(pillar);
+	scrollArea.style.display = "block";
+	rightGrabber = true;
+}
+
+scrollArea.addEventListener("mousemove", function(event){
+	PointerResize(event);
+});
+scrollArea.addEventListener("touchmove", function(event) {
+	event.preventDefault();
+
+	if (touchstarted) {
+		widthStart = parseInt(pointer.style.width);
+
+		var X;
+		if (event.clientX === undefined) {
+			X = event.targetTouches[0].clientX;
+		} else {
+			X = event.clientX;
+		}
+
+		x_start = X;
+		lastX = X;
+		leftStart = parseInt(pointer.style.left);
+		touchstarted = false;
+	}
+
+	PointerResize(event);
+});
+
+scrollArea.onmouseout = Reset;
+scrollArea.ontouchend = function(event) {
+	event.preventDefault();
+	Reset();
+	touchstarted = true;
+}
+scrollArea.ontouchleave = function(event) {
+	event.preventDefault();
+	Reset();
+	touchstarted = true;
+}
+scrollArea.onmouseup = Reset;
+
+overcanvas.onmousemove = function(event) {
+	ShowInfo(event);
+}
+overcanvas.ontouchmove = function(event) {
+	ShowInfo(event);
+}
+
+overcanvas.onmouseout = function() {
+	HideEl(pillar);
+	HideEl(hintBox);
+}
+
+var day = true;
 
 night.onclick = function() {
 	if (day) {
